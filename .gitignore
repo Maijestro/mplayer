@@ -1,0 +1,19 @@
+# Binaries
+mplayer_vaapi_hw_*
+vainfo_aos4
+
+# Object files
+*.o
+*.d
+*.a
+
+# FFmpeg (has its own repo)
+ffmpeg/
+
+# Build artifacts
+objs.lst
+objs_existing.lst
+config.log
+config.mak
+version.h
+ffmpeg/
