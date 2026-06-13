@@ -1,20 +1,59 @@
-# MPlayer for AmigaOS 4.1 - VA-API Hardware Acceleration
+# V-MPlayer / MPlayer for AmigaOS 4.1 - VA-API Hardware Acceleration
 ### By Maijestro | Based on MPlayer SVN trunk r38685
 
-Base source: svn://svn.mplayerhq.hu/mplayer/trunk revision 38685
+**IMPORTANT: This is MPlayer. All credit goes to the MPlayer development team
+and especially to the AmigaOS4 MPlayer developers, in particular smarkusg
+whose AmigaOS4 patches and GitHub repository formed the basis for this work.**
 
-The GitHub repository [smarkusg/mplayer](https://github.com/smarkusg/mplayer)
-was used as the fork base. Parts of the AmigaOS4 patches from that repository
-were also incorporated. The actual build however is based on the official
-MPlayer SVN trunk at revision 38685 with additional AmigaOS4-specific changes.
+- Original MPlayer: https://www.mplayerhq.hu
+- AmigaOS4 MPlayer by smarkusg: https://github.com/smarkusg/mplayer
+- Base SVN: svn://svn.mplayerhq.hu/mplayer/trunk revision 38685
+- License: GPL v2 — full source code and patches are available in this repository
 
-Full VA-API hardware accelerated video decoding and output for AmigaOS 4.1,
-using va.library and FFmpeg hwaccel integration.
+This fork adds VA-API hardware accelerated video output and ARexx control
+to MPlayer for AmigaOS 4.1. The GUI frontend "V-MPlayer" is a separate
+Hollywood script that uses this MPlayer binary as its playback engine.
 
 Tested on AmigaOne X5000 with RX580 graphics card.
 
 Note for QEMU and Pegasos 2 users: change vo=vaapi to vo=comp or vo=sdl
 in the MPlayer configuration file.
+
+
+## Credits
+
+- MPlayer Team — original MPlayer source code
+- smarkusg — AmigaOS4 port, patches and GitHub repository this work is based on
+- All AmigaOS4 MPlayer contributors
+- Maijestro — VA-API implementation, ARexx support, af_export fix, V-MPlayer GUI
+
+
+## What was added by Maijestro
+
+### VA-API Hardware Acceleration (vo_vaapi.c, vd_ffmpeg.c)
+Full hardware accelerated video decoding and output using va.library on AmigaOS 4.1.
+See the Patch and VA-API Architecture sections below for technical details.
+
+### af_export Fix (af_export.c, af.c)
+The original af_export audio filter uses mmap() which is not available on AmigaOS 4.1.
+Replaced with fopen()/fwrite()/fflush() and fixed the AmigaOS path parser.
+
+### ARexx Support (amigaos_stuff.c)
+Added ARexx port MPLAYER.1 for external control. Fixed NP_Path = GetProgramDir()
+so MPlayer can be started from Workbench.
+
+
+## Patch
+
+A complete patch against MPlayer SVN trunk r38685 is available:
+
+    patches/amigaos4_vaapi_all.patch
+
+To apply against a fresh SVN checkout:
+
+    svn co -r 38685 svn://svn.mplayerhq.hu/mplayer/trunk mplayer
+    cd mplayer
+    patch -p0 < amigaos4_vaapi_all.patch
 
 
 ## VA-API Architecture
@@ -28,22 +67,14 @@ VA-API hardware device context:
 
 ### Shared hardware context
 
-A global AVBufferRef is declared in vd_ffmpeg.c and used by vo_vaapi.c:
-
     /* vd_ffmpeg.c - line 102 */
     AVBufferRef *vaapi_hw_device_ctx = NULL;
 
     /* vo_vaapi.c - line 62 */
     extern AVBufferRef *vaapi_hw_device_ctx;
 
-This allows the decoder and the output driver to share the same VADisplay
-without opening it twice.
-
 
 ### Decoder side - vd_ffmpeg.c
-
-FFmpeg provides a get_format() callback that is called by the codec
-to negotiate the pixel format. We hook into this to activate VA-API:
 
     avctx->get_format = get_format;
 
@@ -68,18 +99,8 @@ For FFmpeg 5 and later, hw_frames_ctx must also be set inside get_format():
         av_hwframe_ctx_init(hw_frames_ref);
         avctx->hw_frames_ctx = hw_frames_ref;
 
-The decoded frames are then VA-API surfaces (VASurfaceID) that stay
-in GPU memory and never need to be copied to the CPU.
-
 
 ### Output side - vo_vaapi.c
-
-The output driver receives the decoded frame as an AVFrame with
-data[3] containing the VASurfaceID. The VA display is retrieved
-from the shared hw_device_ctx:
-
-    AVHWDeviceContext *dev_ctx =
-        (AVHWDeviceContext *)vaapi_hw_device_ctx->data;
 
 vaPutSurface() is called directly into the AmigaOS window RastPort
 with GPU scaling - no CPU copy is needed:
@@ -92,7 +113,7 @@ with GPU scaling - no CPU copy is needed:
                  NULL, 0,
                  VA_FRAME_PICTURE);
 
-The vaCreateConfig and vaCreateContext are required before vaPutSurface.
+vaCreateConfig and vaCreateContext are required before vaPutSurface.
 The profile is derived from the video fourcc at config time.
 
 
@@ -102,62 +123,17 @@ Hardware accelerated decoding via FFmpeg VA-API hwaccel:
 H.264, HEVC, MPEG-2, MPEG-4, VC-1, VP8, VP9, AV1
 
 
-## af_export Fix for AmigaOS 4.1
+## ARexx commands
 
-The original af_export audio filter uses mmap() which is not available
-on AmigaOS 4.1.
-
-Changes in af_export.c:
-- Replaced mmap() with fopen() / fwrite() / fflush()
-- Fixed path parser: AmigaOS uses volume:path notation (e.g. RAM:file)
-  so the first colon must be skipped when parsing the filename argument
-- sys/mman.h excluded on AmigaOS4 via #ifndef __amigaos4__
-
-Changes in af.c:
-- Removed #if HAVE_SYS_MMAN_H so af_export is always compiled in
-
-Usage:
-
-    mplayer -af export=RAM:mplayer_vis.raw:512 file.mp3
-
-Output format (RAM:mplayer_vis.raw, 2064 bytes total):
-
-    Bytes 0-3:   nch (channels, big-endian)
-    Bytes 4-7:   size (samples x bps x nch, big-endian)
-    Bytes 8-15:  counter (incremented each update, big-endian)
-    Bytes 16+:   512 x int16_t PCM per channel (s16le, non-interleaved)
-
-
-## ARexx Support
-
-ARexx port MPLAYER.1 for external control.
-
-Critical fix for Workbench startup in amigaos_stuff.c:
-
-    NP_Path = GetProgramDir()
-
-Without this, OpenLibrary("arexx.class") fails when MPlayer is
-started from Workbench. StartArexx() must be called after all
-open_lib() calls.
-
-Available commands:
+Available via port MPLAYER.1:
 
     PAUSE, QUIT, VOLUME VALUE x ABS, SEEK, LOADFILE, MUTE,
     GET_TIME_POS, GET_TIME_LENGTH
 
+Example:
 
-## Patch
-
-A complete patch against MPlayer SVN trunk r38685 is available in the
-patches folder:
-
-    patches/amigaos4_vaapi_all.patch
-
-To apply against a fresh SVN checkout:
-
-    svn co -r 38685 svn://svn.mplayerhq.hu/mplayer/trunk mplayer
-    cd mplayer
-    patch -p0 < amigaos4_vaapi_all.patch
+    C:RX "address MPLAYER.1 PAUSE"
+    C:RX "address MPLAYER.1 VOLUME VALUE 80 ABS"
 
 
 ## Build
@@ -171,14 +147,24 @@ Cross-compiled with ppc-amigaos-gcc under Linux:
         -lfreetype -ldav1d -lm -lunix -lauto
 
 
+## Tested on
+
+- AmigaOne X5000 with RX580 graphics card
+- AmigaOS 4.1 Final Edition
+
+
 ## Support
 
-If you find this useful, donations are welcome:
+If you find this useful, donations are welcome — but please also consider
+supporting the original MPlayer and smarkusg AmigaOS4 developers:
 https://www.paypal.me/Maijestro
 
 
 ## License
 
-GPL v2 - see LICENSE file for details.
+GPL v2 — this software is free and open source.
+Full source code is available in this repository.
+Patch against SVN r38685 is in the patches/ folder.
+
 Original MPlayer SVN: svn://svn.mplayerhq.hu/mplayer/trunk r38685
-GitHub fork base: https://github.com/smarkusg/mplayer
+AmigaOS4 base: https://github.com/smarkusg/mplayer
