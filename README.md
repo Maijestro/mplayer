@@ -146,6 +146,20 @@ Available commands:
     GET_TIME_POS, GET_TIME_LENGTH
 
 
+## Patch
+
+A complete patch against MPlayer SVN trunk r38685 is available in the
+patches folder:
+
+    patches/amigaos4_vaapi_all.patch
+
+To apply against a fresh SVN checkout:
+
+    svn co -r 38685 svn://svn.mplayerhq.hu/mplayer/trunk mplayer
+    cd mplayer
+    patch -p0 < amigaos4_vaapi_all.patch
+
+
 ## Build
 
 Cross-compiled with ppc-amigaos-gcc under Linux:
