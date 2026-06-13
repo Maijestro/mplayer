@@ -54,14 +54,14 @@ extern const ao_functions_t audio_out_v4l2;
 extern const ao_functions_t audio_out_mpegpes;
 extern const ao_functions_t audio_out_pcm;
 extern const ao_functions_t audio_out_pss;
+
+#ifdef __AMIGAOS4__
 extern const ao_functions_t audio_out_ahi_dev2;
+#endif
 
 const ao_functions_t* const audio_out_drivers[] =
 {
 // native:
-
-        &audio_out_ahi_dev2,
-
 #ifdef CONFIG_DIRECTX
         &audio_out_dsound,
 #endif
@@ -121,6 +121,9 @@ const ao_functions_t* const audio_out_drivers[] =
 #ifdef CONFIG_V4L2_DECODER
         &audio_out_v4l2,
 #endif
+#ifdef __AMIGAOS4__
+        &audio_out_ahi_dev2,
+#endif
         &audio_out_null,
 // should not be auto-selected:
         &audio_out_pcm,
@@ -133,7 +136,7 @@ void list_audio_out(void){
     mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_AUDIO_OUTPUTS\n");
     while (audio_out_drivers[i]) {
         const ao_info_t *info = audio_out_drivers[i++]->info;
-        mp_msg(MSGT_GLOBAL, MSGL_INFO,"\t%-16s\t%s\n", info->short_name, info->name);
+        mp_msg(MSGT_GLOBAL, MSGL_INFO,"\t%s\t%s\n", info->short_name, info->name);
     }
     mp_msg(MSGT_GLOBAL, MSGL_INFO,"\n");
 }

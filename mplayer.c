@@ -31,6 +31,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#ifdef __AMIGAOS4__
+#include <stdio.h>
+#define AMIGA_VERSION "mplayer-SVN-r38685 (13.05.2026)"
+static const char * __attribute__((used)) stackcookie = "$STACK: 500000";
+static const char *__attribute__((used)) version_tag = "$VER: " AMIGA_VERSION ;
+#endif
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define _UWIN 1  /*disable Non-underscored versions of non-ANSI functions as otherwise int eof would conflict with eof()*/
 #include <windows.h>
@@ -62,21 +69,16 @@
  * make it all work is to use the builtin SDL-bootstrap code, which
  * will be done automatically by replacing our main() if we include SDL.h.
  */
+#ifdef __AMIGAOS4__
+#include "amigaos/amigaos_stuff.h"
+#endif
+
 #if (defined(__APPLE__) || defined(__AMIGAOS4__)) && defined(CONFIG_SDL)
 #ifdef CONFIG_SDL_SDL_H
 #include <SDL/SDL.h>
 #else
 #include <SDL.h>
 #endif
-#endif
-
-#ifdef __amigaos4__
-// #include "amigaos/debug.h"
-#include "amigaos/amigaos_stuff.h"
-//markus
-extern long arexx_gui;
-// #include "./amigaos/arexx.h"
-//
 #endif
 
 #include "gui/interface.h"
@@ -95,6 +97,7 @@ extern long arexx_gui;
 #include "sub/font_load.h"
 #include "sub/sub.h"
 #include "libvo/video_out.h"
+extern const vo_functions_t* vo_current_override;
 #include "stream/cache2.h"
 #include "stream/stream.h"
 #include "stream/stream_bd.h"
@@ -171,7 +174,11 @@ static MPContext mpctx_s = {
 #endif
 };
 
-MPContext *mpctx = &mpctx_s;
+static MPContext *mpctx = &mpctx_s;
+#ifdef __AMIGAOS4__
+MPContext *mpctx_global = &mpctx_s;
+#endif
+
 int fixed_vo;
 
 // benchmark:
@@ -727,11 +734,8 @@ void exit_player_with_rc(enum exit_reason how, int rc)
     common_uninit();
 
     current_module = "exit_player";
-
-#ifdef __amigaos4__
-    // AmigaOS_Close(); // changed to 'atexit(AmigaOS_Close);' before AmigaOS_Open()
+#ifdef __AMIGAOS4__
     SDL_Quit();
-//printf("SDL_Quit()\n");
 #endif
 
     if (mpctx->playtree_iter)
@@ -1519,9 +1523,6 @@ static mp_osd_msg_t *get_osd_msg(void)
  */
 void set_osd_bar(int type, const char *name, double min, double max, double val)
 {
-    if (osd_level < 1)
-        return;
-
     if (mpctx->sh_video) {
         osd_visible = (GetTimerMS() + osd_duration) | 1;
         vo_osd_progbar_type  = type;
@@ -2638,12 +2639,6 @@ static void pause_loop(void)
         cmd = mp_input_get_cmd(0, 1, 0);
         mp_cmd_free(cmd);
     }
-//markus
-    if (cmd && cmd->id == MP_CMD_PAUSE_SPACE && arexx_gui == FALSE) {
-        cmd = mp_input_get_cmd(0, 1, 0);
-        mp_cmd_free(cmd);
-    }
-//
     mpctx->osd_function = OSD_PLAY;
     if (mpctx->audio_out && mpctx->sh_audio) {
         if (mpctx->eof) // do not play remaining audio if we e.g.  switch to the next file
@@ -2821,7 +2816,7 @@ int main(int argc, char *argv[])
     int i;
 
 #ifdef __amigaos4__
-    atexit(AmigaOS_Close); // avoid unfreeded resources
+    atexit(AmigaOS_Close); // avoid unfreed resources
     if (AmigaOS_Open(argc, argv) == -1) exit_player_with_rc(EXIT_QUIT,1);
 #endif
 
@@ -2851,7 +2846,7 @@ int main(int argc, char *argv[])
 
 #ifdef CONFIG_GUI
     if (use_gui) {
-        initialized_flags |= INITIALIZED_GUI;
+        gui(GUI_SET_CONTEXT, mpctx);
         cfg_read();
     }
 #endif
@@ -2868,12 +2863,10 @@ int main(int argc, char *argv[])
                 exit_player_with_rc(EXIT_QUIT,1);
         }
         mpctx->playtree = m_config_parse_mp_command_line(mconfig, new_argc, new_argv);
-//NOTE: 'mplayer -input cmdlist' (and maybe other args) doesn't reach here
   }
 #else
     mpctx->playtree = m_config_parse_mp_command_line(mconfig, argc, argv);
 #endif
-
     if (mpctx->playtree == NULL) {
         // parse error
         opt_exit = 1;
@@ -3090,7 +3083,7 @@ int main(int argc, char *argv[])
     current_module     = NULL;
 
     // Catch signals
-#if !defined(__MINGW32__) && !defined(__amigaos4__)
+#if !defined(__MINGW32__) && !defined(__AMIGAOS4__)
     // TODO: use newer POSIX SIG_IGN behaviour instead to
     // automatically handle children?
     signal(SIGCHLD, child_sighandler);
@@ -3125,8 +3118,10 @@ int main(int argc, char *argv[])
 
 #ifdef CONFIG_GUI
     if (use_gui) {
+        current_module = "init_gui";
         guiInit();
-        gui(GUI_SET_CONTEXT, mpctx);
+        initialized_flags |= INITIALIZED_GUI;
+        current_module     = NULL;
         gui(GUI_SET_STATE, (void *)(intptr_t)(filename ? GUI_PLAY : GUI_STOP));
     }
 #endif
@@ -3418,6 +3413,13 @@ play_next_file:
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
 goto_enable_cache:
     if (stream_cache_size > 0) {
+#ifdef __amigaos4__
+        /* AmigaOS4: Cache deaktiviert - Single-Core IPC Race Condition
+         * Der Cache-Prozess laeuft via CreateNewProcTags und teilt den
+         * Adressraum, aber ohne Mutex-Schutz kommt es zu Datenkorrruption.
+         * Lokales Filesystem ist schnell genug ohne Cache. */
+        mp_msg(MSGT_CACHE, MSGL_WARN, "AmigaOS4: -cache nicht unterstuetzt (Race Condition), wird ignoriert.\n");
+#else
         int res;
         current_module = "enable_cache";
         res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024ull,
@@ -3426,6 +3428,7 @@ goto_enable_cache:
         if (res == 0)
             if ((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY)))
                 goto goto_next_file;
+#endif
     }
 
 //============ Open DEMUXERS --- DETECT file type =======================
@@ -3578,7 +3581,7 @@ goto_enable_cache:
                 break;
             if ((mpctx->demuxer->file_format == DEMUXER_TYPE_AVI || mpctx->demuxer->file_format == DEMUXER_TYPE_ASF || mpctx->demuxer->file_format == DEMUXER_TYPE_MOV)
                 && stream_dump_type == 2)
-                stream_write_buffer(os, &in_size, 4);
+                stream_write_buffer(os, (unsigned char *)&in_size, 4);
             if (in_size > 0) {
                 stream_write_buffer(os, start, in_size);
                 stream_dump_progress(in_size, mpctx->stream);
@@ -3937,8 +3940,12 @@ goto_enable_cache:
                     if (!frame_time_remaining && blit_frame) {
                         unsigned int t2 = GetTimer();
 
-                        if (vo_config_count)
+                        if (vo_config_count) {
+                            /* Use fallback VO if vaapi handed off to comp_yuv2 */
+                            if (vo_current_override)
+                                mpctx->video_out = (vo_functions_t *)vo_current_override;
                             mpctx->video_out->flip_page();
+                        }
                         mpctx->num_buffered_frames--;
 
                         vout_time_usage += (GetTimer() - t2) * 0.000001;
@@ -4205,9 +4212,11 @@ goto_next_file:  // don't jump here after ao/vo/getch initialization!
     }
 
 #ifdef CONFIG_GUI
-    if (use_gui)
+    if (use_gui) {
+        gui(GUI_REDRAW, 0);
         if (guiInfo.MediumChanged != GUI_MEDIUM_SAME)
             gui(GUI_END_PLAY, 0);
+    }
 #endif
 
     if (

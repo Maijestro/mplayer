@@ -498,9 +498,9 @@ Video output:
   --enable-mga             enable mga_vid video output [autodetect]
   --enable-xmga            enable mga_vid X11 video output [autodetect]
   --enable-xv              enable Xv video output [autodetect]
-  --enable-xvmc            enable XvMC acceleration [disable]
   --enable-vda             enable VDA acceleration [autodetect]
   --enable-vdpau           enable VDPAU acceleration [autodetect]
+  --enable-vaapi           enable VAAPI acceleration [autodetect]
   --enable-vm              enable XF86VidMode support [autodetect]
   --enable-xinerama        enable Xinerama support [autodetect]
   --enable-x11             enable X11 video output [autodetect]
@@ -566,7 +566,7 @@ Miscellaneous options:
   --host-cc=COMPILER     C compiler for tools needed while building [gcc]
   --as=ASSEMBLER         assembler to build MPlayer [as]
   --nm=NM                nm tool to build MPlayer [nm]
-  --yasm=YASM            Yasm assembler to build MPlayer [yasm]
+  --yasm=YASM            Yasm assembler to build MPlayer [nasm]
   --strip=STRIP          use strip tool STRIP [strip]
   --ar=AR                librarian to build MPlayer [ar]
   --ranlib=RANLIB        ranlib to build MPlayer [ranlib]
@@ -617,7 +617,6 @@ Use these options if autodetection fails:
   --extra-libs=FLAGS          extra linker flags
   --extra-libs-mplayer=FLAGS  extra linker flags for MPlayer
   --extra-libs-mencoder=FLAGS extra linker flags for MEncoder
-  --with-xvmclib=NAME         adapter-specific library name (e.g. XvMCNVIDIA)
 
   --with-freetype-config=PATH path to freetype-config
   --with-sdl-config=PATH      path to sdl*-config
@@ -678,7 +677,7 @@ $_ar 2>&1 | grep -q "\[T\] " && _arflags=rcT
 test "$CC" && _cc="$CC"
 _as=auto
 _nm=auto
-_yasm=yasm
+_yasm=nasm
 _runtime_cpudetection=no
 _cross_compile=auto
 _prefix="/usr/local"
@@ -699,9 +698,9 @@ _xss=auto
 _dga1=auto
 _dga2=auto
 _xv=auto
-_xvmc=no  #auto when complete
 _vda=auto
 _vdpau=auto
+_vaapi=auto
 _sdl=auto
 _kva=auto
 _direct3d=auto
@@ -933,10 +932,6 @@ for ac_option do
   --with-install=*)
     _install=$(option_value $ac_option)
     ;;
-  --with-xvmclib=*)
-    _xvmclib=$(option_value $ac_option)
-    ;;
-
   --with-sdl-config=*)
     _sdlconfig=$(option_value $ac_option)
     ;;
@@ -1051,12 +1046,12 @@ for ac_option do
   --disable-xss)        _xss=no         ;;
   --enable-xv)          _xv=yes         ;;
   --disable-xv)         _xv=no          ;;
-  --enable-xvmc)        _xvmc=yes       ;;
-  --disable-xvmc)       _xvmc=no        ;;
   --enable-vda)         _vda=yes        ;;
   --disable-vda)        _vda=no         ;;
   --enable-vdpau)       _vdpau=yes      ;;
   --disable-vdpau)      _vdpau=no       ;;
+  --enable-vaapi)       _vaapi=yes      ;;
+  --disable-vaapi)      _vaapi=no       ;;
   --enable-sdl)         _sdl=yes        ;;
   --disable-sdl)        _sdl=no         ;;
   --enable-kva)         _kva=yes        ;;
@@ -1536,18 +1531,19 @@ if test -e ffmpeg/.svn ; then
     exit 1
 fi
 
-FFBRANCH=master
-test -e FFBRANCH && FFBRANCH=$(cat FFBRANCH)
-
-if test -e ffmpeg/mp_auto_pull ; then
-    echo "Updating FFmpeg, (re)move ffmpeg/mp_auto_pull to disable"
-    (cd ffmpeg && git checkout $FFBRANCH)
-    if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
-        echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
-        exit 1
-    fi
-fi
-
+#FFBRANCH="release/7.1"
+#test -e FFBRANCH && FFBRANCH=$(cat FFBRANCH)
+#
+#if test -e ffmpeg/mp_auto_pull ; then
+#    cfg_fetch="remote.origin.fetch=+refs/heads/$FFBRANCH:refs/remotes/origin/$FFBRANCH"
+#    echo "Updating FFmpeg, (re)move ffmpeg/mp_auto_pull to disable"
+#    (cd ffmpeg && git -c "$cfg_fetch" fetch --depth 1 origin && git -c "$cfg_fetch" checkout $FFBRANCH)
+#    if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
+#        echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
+#        exit 1
+#    fi
+#fi
+#
 if test "$ffmpeg_a" != "no" && ! test -e ffmpeg ; then
     echo "No FFmpeg checkout, press enter to download one with git or CTRL+C to abort"
     read tmp
@@ -1561,6 +1557,11 @@ if test "$ffmpeg_a" != "no" && ! test -e ffmpeg ; then
         exit 1
     fi
     touch ffmpeg/mp_auto_pull
+fi
+
+ffmpeg_filter_struct_name=AVFilter
+if grep -q FFFilter ffmpeg/configure; then
+    ffmpeg_filter_struct_name=FFFilter
 fi
 
 list_subparts() {
@@ -1586,7 +1587,7 @@ list_cbs_extern() {
 
 list_subparts_filters() {
   test ! -e ffmpeg/libav${1} && return 1
-  pattern="s/^extern AVFilter ff_([avfsinkrc]{2,5})_([a-zA-Z0-9_]+);/\1_\2_filter/p"
+  pattern="s/^extern $ffmpeg_filter_struct_name ff_([avfsinkrc]{2,5})_([a-zA-Z0-9_]+);/\1_\2_filter/p"
   sed -E -n "$pattern" ffmpeg/libav${1} | toupper
   return 0
 }
@@ -1660,12 +1661,12 @@ libavmuxers=$(echo $libavmuxers_all)
 libavprotocols=$(echo $libavprotocols_all)
 libavfilters=$(echo $libavfilters_all)
 
-libavdecoders=$(filter_out_component decoder 'LIB[A-Z0-9_]* [A-Z0-9]*_QSV [A-Z0-9]*_MMAL [A-Z0-9]*_MEDIACODEC [A-Z0-9]*_CUVID [A-Z0-9_]*_AT [A-Z0-9]*_RKMPP [A-Z0-9]*_V4L2M2M')
-libavencoders=$(filter_out_component encoder 'LIB[A-Z0-9_]* [A-Z0-9]*_QSV [A-Z0-9]*_MMAL [A-Z0-9]*_MEDIACODEC NVENC[A-Z0-9_]* AV1_NVENC[A-Z0-9_]* H264_NVENC[A-Z0-9_]* HEVC_NVENC[A-Z0-9_]* HAP [A-Z0-9]*_VIDEOTOOLBOX [A-Z0-9]*_VAAPI [A-Z0-9]*_OMX [A-Z0-9_]*_AT [A-Z0-9]*_V4L2M2M [A-Z0-9]*_AMF [A-Z0-9]*_MF')
+libavdecoders=$(filter_out_component decoder 'LIB[A-Z0-9_]* [A-Z0-9]*_QSV [A-Z0-9]*_MMAL [A-Z0-9]*_MEDIACODEC [A-Z0-9]*_CUVID [A-Z0-9_]*_AT [A-Z0-9]*_RKMPP [A-Z0-9]*_V4L2M2M [A-Z0-9]*_AMF')
+libavencoders=$(filter_out_component encoder 'LIB[A-Z0-9_]* [A-Z0-9]*_QSV [A-Z0-9]*_MMAL [A-Z0-9]*_MEDIACODEC NVENC[A-Z0-9_]* AV1_NVENC[A-Z0-9_]* H264_NVENC[A-Z0-9_]* HEVC_NVENC[A-Z0-9_]* HAP [A-Z0-9]*_VIDEOTOOLBOX [A-Z0-9]*_VAAPI [A-Z0-9]*_OMX [A-Z0-9_]*_AT [A-Z0-9]*_V4L2M2M [A-Z0-9]*_AMF [A-Z0-9]*_MF [A-Z0-9_]*D3D12VA[A-Z0-9_]* [A-Z0-9]*_VULKAN')
 libavbsfs=$(filter_out_component bsf 'TRACE_HEADERS [A-Z0-9_]*_METADATA H264_REDUNDANT_PPS FILTER_UNITS')
 libavdemuxers=$(filter_out_component demuxer 'AVISYNTH LIB[A-Z0-9_]* REDIR VAPOURSYNTH')
 libavmuxers=$(filter_out_component muxer 'CHROMAPRINT LIB[A-Z0-9_]* RTP RTSP SAP')
-libavprotocols=$(filter_out_component protocol 'BLURAY FFRTMPCRYPT HTTPS LIB[A-Z0-9_]* TLS TLS_GNUTLS TLS_OPENSSL TLS_SECURETRANSPORT TLS_SCHANNEL')
+libavprotocols=$(filter_out_component protocol 'BLURAY FFRTMPCRYPT HTTPS LIB[A-Z0-9_]* TLS TLS_GNUTLS TLS_OPENSSL TLS_SECURETRANSPORT TLS_SCHANNEL ANDROID_CONTENT')
 libavfilters=$(filter_out_component filter 'VF_FREI0R[A-Z0-9_]* LIB[A-Z0-9_]* MP VF_OCV')
 
 libavwrappers_all="DEFLATE_WRAPPER INFLATE_WRAPPER"
@@ -1703,6 +1704,15 @@ msvc_filter_flags() {
       -pipe) ;;
       -M*) ;;
       -l*) echo -n ${f#-l}.lib" " ;;
+      *) echo -n $f" " ;;
+    esac
+  done
+}
+
+os2_aout_filter_flags() {
+  for f; do
+    case $f in
+      -Zomf) ;;
       *) echo -n $f" " ;;
     esac
   done
@@ -1783,6 +1793,14 @@ else
           _cc_mini=$(echo ${cc_version%%-*} | cut -d '.' -f 3)
           ;;
       esac
+      echores "$cc_version"
+      break
+    fi
+    if test "$cc_name_tmp" = "tcc"; then
+      cc_name=$cc_name_tmp
+      echocheck "$_cc version"
+      cc_vendor=tcc
+      cc_version=$($_cc -dumpversion 2>&1)
       echores "$cc_version"
       break
     fi
@@ -1928,10 +1946,9 @@ fi
 if amigaos ; then
   _select=no
   _sighandler=no
+  _stream_cache=no
+  def_stream_cache="#undef CONFIG_STREAM_CACHE"
   extra_cflags="-DNEWLIB -D__USE_INLINE__ $extra_cflags"
-#markus delete ?
-#  def_pthread_cache="#define PTHREAD_CACHE 1"
-#
 fi
 
 if qnx ; then
@@ -1954,15 +1971,15 @@ if os2 ; then
   test -n "$ld_static" && ld_static='-Wl,-static'
   # OS/2 linker does not support a thin archive. Remove 'T' flag.
   _arflags=$(echo $_arflags | tr -d T)
+  # OS/2 iconv() has a different pointer declaration from POSIX. This has no
+  # problems up to GCC13, but since GCC14 this is treated as an errors.
+  # Treat it as warnings not errors.
+  extra_cflags="$extra_cflags -D_EMX_SOURCE -Wno-error=incompatible-pointer-types"
 fi
 
 if wine ; then
   extra_cflags="-fno-pic -UWIN32 -U_WIN32 -U__WIN32 -U__WIN32__ -DWINE_NOWINSOCK $extra_cflags"
   libs_mplayer="$libs_mplayer -lshell32"
-fi
-
-if darwin && test "$cc_vendor" != "clang" ; then
-  extra_cflags="-falign-loops=16 -shared-libgcc $extra_cflags"
 fi
 
 TMPEXE="$mplayer_tmpdir/tmp$_exesuf"
@@ -2084,6 +2101,15 @@ if x86 ; then
   # SSE implies MMX2, but not all SSE processors report the mmxext CPU flag.
   pparam=$(echo $pparam | sed -e 's/sse/sse mmxext/')
 
+  # fma3 is reported in cpuinfo simply as fma
+  contains_item "$pparam" "fma" && pparam="$pparam fma3"
+
+  # avx512 baseline requires F, CD, BW, DQ, VL
+  contains_item "$pparam" "avx512dq" && pparam="$pparam avx512"
+
+  # IceLake equivalent avx512 has further requirements
+  contains_item "$pparam" "avx512_vnni" && pparam="$pparam avx512icl"
+
   extcheck=kernel_check
   msvc && extcheck=yes
   for ext in $pparam ; do
@@ -2141,8 +2167,8 @@ EOF
   extcheck $_sse4_2   'sse4_2'   'pcmpgtq %%xmm0, %%xmm0'
   extcheck $_avx      'avx'      'vpabsw %%xmm0, %%xmm0'
   extcheck $_avx2     'avx2'     'vextracti128 $0, %%ymm0, %%xmm0'
-  extcheck $_avx512   'avx512'   'vmovdqa32 [eax]{k1}{z}, zmm0'
-  extcheck $_avx512icl 'avx512icl' 'vpdpwssds zmm31{k1}{z}, zmm29, zmm28'
+  extcheck $_avx512   'avx512'   'vmovdqa32 %%zmm0, (%%eax)%{%%k1%}'
+  extcheck $_avx512icl 'avx512icl' 'vpdpwssds %%zmm28, %%zmm29, %%zmm31%{%%k1%}%{z%}'
   extcheck $_xop      'xop'      'vpmacsdd %%xmm0, %%xmm1, %%xmm2, %%xmm3'
   extcheck $_fma3     'fma3'     'vfmadd132ps %%ymm0, %%ymm1, %%ymm2'
   extcheck $_fma4     'fma4'     'vfmaddps %%ymm0, %%ymm1, %%ymm2, %%ymm3'
@@ -2568,7 +2594,7 @@ case "$host_arch" in
     arch='aarch64'
     iproc='aarch64'
     if test "$_runtime_cpudetection" = no ; then
-      cflag_check -march=native -mcpu=native -mfpu=auto && _march="-march=native -mcpu=native -mfpu=auto"
+      cflag_check -march=native -mcpu=native && _march="-march=native -mcpu=native"
     fi
     ;;
 
@@ -2915,7 +2941,11 @@ echocheck "extern symbol prefix"
 cat > $TMPC << EOF
 int ff_extern;
 EOF
+# OS/2 nm does work only with aout format. Remove -Zomf from flags.
+os2 &&
+  { saved_filter_flags=$filter_flags; filter_flags=os2_aout_filter_flags; }
 cc_check -c || die "Symbol mangling check failed."
+os2 && filter_flags=$saved_filter_flags
 sym=$($_nm -P -g $TMPEXE | grep ff_extern)
 extern_prefix=${sym%%ff_extern*}
 def_extern_asm="#define EXTERN_ASM $extern_prefix"
@@ -2940,8 +2970,8 @@ cat > $TMPC << EOF
 __attribute__((noinline)) static int foo3(int i1, int i2, int i3) { return i3; }
 int main(void) { return foo3(1, 2, 3) == 3 ? 0 : 1; }
 EOF
-  cc_check -O2 -mstackrealign && tmp_run && cflags_stackrealign=-mstackrealign
-  test -z "$cflags_stackrealign" && cc_check -O2 -mstackrealign -fno-unit-at-a-time &&
+  cc_check -O4 -mstackrealign && tmp_run && cflags_stackrealign=-mstackrealign
+  test -z "$cflags_stackrealign" && cc_check -O4 -mstackrealign -fno-unit-at-a-time &&
     tmp_run && cflags_stackrealign="-mstackrealign -fno-unit-at-a-time"
   test -n "$cflags_stackrealign" && echores "yes" || echores "no"
 fi # if darwin && test "$cc_vendor" = "gnu" ; then
@@ -2965,10 +2995,9 @@ if test -z "$CFLAGS" || test "$_profile" != "" || test "$_debug" != ""; then
   elif test "$cc_vendor" != "gnu" ; then
     CFLAGS="-O2 $_march $_mcpu $_pipe"
   else
-    CFLAGS="-O2 $_march $_mcpu $_pipe -ffast-math -fomit-frame-pointer"
+    CFLAGS="-O4 $_march $_mcpu $_pipe -fomit-frame-pointer"
     WARNFLAGS="-Wall -Wno-switch -Wno-parentheses -Wpointer-arith -Wredundant-decls -Werror=format-security"
     WARN_CFLAGS="-Werror-implicit-function-declaration"
-    extra_ldflags="$extra_ldflags -ffast-math"
   fi
 
   if test "$_profile" != "" || test "$_debug" != ""; then
@@ -2981,7 +3010,7 @@ else
 fi
 
 CFLAGS="-D_ISOC99_SOURCE -I. -Iffmpeg $CFLAGS"
-HOSTCFLAGS="-D_ISOC99_SOURCE -I. -Iffmpeg -O2"
+HOSTCFLAGS="-D_ISOC99_SOURCE -I. -Iffmpeg -O3"
 
 # On glibc, add some more CPPFLAGS for enabling required functionality.
 cpp_condition_check features.h "defined __GLIBC__" &&
@@ -2995,7 +3024,7 @@ fi
 if test "$cc_vendor" = "gnu" ; then
   cflag_check -fno-tree-vectorize && CFLAGS="$CFLAGS -fno-tree-vectorize"
   cflag_check -Wundef && WARNFLAGS="-Wundef $WARNFLAGS"
-  cflag_check -std=gnu99 && WARN_CFLAGS="-std=gnu99 $WARN_CFLAGS"
+  cflag_check -std=c11 && WARN_CFLAGS="-std=c11 $WARN_CFLAGS"
   cflag_check -Wdeclaration-after-statement && WARN_CFLAGS="-Wdeclaration-after-statement $WARN_CFLAGS"
   cflag_check -Wno-pointer-sign && WARN_CFLAGS="-Wno-pointer-sign $WARN_CFLAGS"
   cflag_check -Wdisabled-optimization && WARN_CFLAGS="-Wdisabled-optimization $WARN_CFLAGS"
@@ -4577,10 +4606,10 @@ echores "$clock_gettime"
 
 echocheck "glob()"
 # glob_win disables a Windows-specific glob() replacement.
-glob=no
-glob_win=no
+glob=yes
+glob_win=yes
 def_glob='#define HAVE_GLOB 1'
-statement_check glob.h '2glob("filename", 0, 0, 0)' ||
+statement_check glob.h 'glob("filename", 0, 0, 0)' ||
     { glob=no ; def_glob='#undef HAVE_GLOB' ;
       mingw32 && glob_win=no ; }
 echores "$glob"
@@ -5038,37 +5067,6 @@ fi
 echores "$_xv"
 
 
-echocheck "XvMC"
-if test "$_xvmc" != no  && test "$_xv" = yes ; then
-  _xvmc=no
-  cat > $TMPC <<EOF
-#include <X11/Xlib.h>
-#include <X11/extensions/Xvlib.h>
-#include <X11/extensions/XvMClib.h>
-int main(void) {
-  XvMCQueryExtension(0, 0, 0);
-  XvMCCreateContext(0, 0, 0, 0, 0, 0, 0);
-  return 0; }
-EOF
-  for ld_tmp in $_xvmclib XvMCNVIDIA XvMCW I810XvMC ; do
-    cc_check -lXvMC -l$ld_tmp && _xvmc=yes && _xvmclib="$ld_tmp" && break
-  done
-fi
-if test "$_xvmc" = yes ; then
-  def_xvmc='#define CONFIG_XVMC 1'
-  libs_mplayer="$libs_mplayer -lXvMC"
-  test -n "$_xvmclib" && libs_mplayer="$libs_mplayer -l$_xvmclib"
-  vomodules="xvmc $vomodules"
-  res_comment="using $_xvmclib"
-  libavhwaccels="$libavhwaccels MPEG1_XVMC_HWACCEL MPEG2_XVMC_HWACCEL"
-else
-  def_xvmc='#define CONFIG_XVMC 0'
-  novomodules="xvmc $novomodules"
-  libavdecoders=$(filter_out_component decoder 'MPEG_XVMC')
-fi
-echores "$_xvmc"
-
-
 echocheck "Video Decode Acceleration (VDA)"
 if test "$_vda" = auto ; then
   _vda=no
@@ -5107,6 +5105,26 @@ else
   libavdecoders=$(filter_out_component decoder '[A-Z0-9]*_VDPAU')
 fi
 echores "$_vdpau"
+
+
+echocheck "VAAPI"
+if test "$_vaapi" = auto && test "$_x11" = yes ; then
+  _vaapi=no
+  if test "$_dl" = yes ; then
+    statement_check va/va_x11.h 'vaGetDisplay(0)' -lva -lva-x11 && _vaapi=yes
+  fi
+fi
+if test "$_vaapi" = yes ; then
+  def_vaapi='#define CONFIG_VAAPI 1'
+  libs_mplayer="$libs_mplayer -lva -lva-x11"
+  vomodules="vaapi $vomodules"
+  libavhwaccels="$libavhwaccels H263_VAAPI_HWACCEL H264_VAAPI_HWACCEL HEVC_VAAPI_HWACCEL MPEG2_VAAPI_HWACCEL MPEG4_VAAPI_HWACCEL VC1_VAAPI_HWACCEL WMV3_VAAPI_HWACCEL"
+else
+  def_vaapi='#define CONFIG_VAAPI 0'
+  novomodules="vaapi $novomodules"
+  libavdecoders=$(filter_out_component decoder '[A-Z0-9]*_VAAPI')
+fi
+echores "$_vaapi"
 
 
 echocheck "Xinerama"
@@ -5561,7 +5579,7 @@ if test "$_mng" = auto ; then
 #include <libmng.h>
 int main(void) { return !mng_version_text(); }
 EOF
-  for mnglibs in '-lmng -lz' '-lmng -ljpeg -llcms -lz' ; do
+  for mnglibs in '-lmng -lz' '-lmng -ljpeg -lz' ; do
     cc_check $mnglibs && _mng=yes && break
   done
 fi
@@ -6257,7 +6275,7 @@ int main(void) {
   return 0;
 }
 EOF
-  for I in "-lopenal -lphread" "-lopenal32" "-framework OpenAL" ; do
+  for I in "-lopenal" "-lopenal32" "-framework OpenAL" ; do
     cc_check $I && _openal=yes && break
     cc_check -DOPENAL_AL_H=1 $I && def_openal_h='#define OPENAL_AL_H 1' && _openal=yes && break
   done
@@ -6444,7 +6462,7 @@ fi
 echocheck "VCD support"
 if test "$_vcd" = auto; then
   _vcd=no
-  if linux || freebsd || netbsd || openbsd || dragonfly || bsdos || darwin || sunos || os2; then
+  if linux || freebsd || netbsd || openbsd || dragonfly || bsdos || sunos || os2; then
     _vcd=yes
   elif mingw32; then
   header_check ddk/ntddcdrm.h && _vcd=yes
@@ -6657,7 +6675,7 @@ int main(void) {
 EOF
   _fontconfig=no
   for ld_tmp in "" "-lexpat -lfreetype" "-lexpat -lfreetype -lz" "-lexpat -lfreetype -lz -liconv" ; do
-    ld_tmp="-lfontconfig -lexpat -lfreetype -lpthread $ld_tmp"
+    ld_tmp="-lfontconfig $ld_tmp"
     cc_check $ld_tmp && _fontconfig=yes && extra_ldflags="$extra_ldflags $ld_tmp" && break
   done
   if test "$_fontconfig" = no && $_pkg_config --exists fontconfig ; then
@@ -8203,7 +8221,7 @@ EOF
     echocheck "GTK+ version"
 
     if $_pkg_config --exists gtk+-2.0 ; then
-      _gtk=$($_pkg_config --modversion "gtk+-2.0 >= 2.4.0" 2>&1)
+      _gtk=$($_pkg_config --modversion "gtk+-2.0 >= 2.6.0" 2>&1)
       if [ $? -eq 0 ]; then
         extra_cflags="$extra_cflags $($_pkg_config --cflags gtk+-2.0 2>/dev/null)"
         libs_mplayer="$libs_mplayer $($_pkg_config --libs gtk+-2.0 2>/dev/null)"
@@ -8214,9 +8232,7 @@ EOF
         die "$_gtk"
       fi
 
-      # Check for specific minimum version of GLib
-      # (version 2.4.0, required by GTK+ 2.4.0, would have been
-      # checked automatically, but doesn't meet our requirements)
+      # Check for GLib
       echocheck "GLib version"
       if $_pkg_config --exists glib-2.0 ; then
         _glib=$($_pkg_config --modversion "glib-2.0 >= 2.6.0" 2>&1)
@@ -8433,6 +8449,7 @@ if test "$_dvdnav" = yes ; then
 else
   def_dvdnav='#undef CONFIG_DVDNAV'
   noinputmodules="dvdnav $noinputmodules"
+  libavdemuxers=$(filter_out_component demuxer 'DVDVIDEO')
 fi
 echores "$_dvdnav"
 
@@ -8846,6 +8863,7 @@ V4L2 = $_v4l2
 VCD = $_vcd
 VDA = $_vda
 VDPAU = $_vdpau
+VAAPI = $_vaapi
 VESA = $_vesa
 VIDIX = $_vidix
 VIDIX_PCIDB = $_vidix_pcidb_val
@@ -8878,7 +8896,6 @@ XMMS_PLUGINS = $_xmms
 XV = $_xv
 XVID4 = $_xvid
 XVIDIX = $xvidix
-XVMC = $_xvmc
 XVR100 = $_xvr100
 YUV4MPEG = $_yuv4mpeg
 ZR = $_zr
@@ -8951,7 +8968,10 @@ CONFIG_CABAC   = yes
 CONFIG_CBS     = yes
 CONFIG_CHROMAPRINT = no
 CONFIG_DCT     = yes
+# was renamed in FFmpeg from DOVI_RPU to CONFIG_DOVI_RPUDEC in commit 783734d979d3
 CONFIG_DOVI_RPU = yes
+CONFIG_DOVI_RPUDEC = yes
+CONFIG_DOVI_RPUENC = yes
 CONFIG_DWT     = yes
 CONFIG_ERROR_RESILIENCE = yes
 CONFIG_EVCPARSE = yes
@@ -8983,7 +9003,10 @@ CONFIG_QPELDSP = yes
 CONFIG_QSV     = no
 CONFIG_HUFFYUVDSP = yes
 CONFIG_HUFFYUVENCDSP = yes
+CONFIG_IAMFDEC = yes
+CONFIG_IAMFENC = yes
 CONFIG_IDCTDSP = yes
+CONFIG_ISO_WRITER = yes
 CONFIG_TPELDSP = yes
 CONFIG_HUFFMAN = yes
 CONFIG_MDCT15  = yes
@@ -9048,7 +9071,7 @@ CONFIG_RTPDEC   = $networking
 CONFIG_VF_LAVFI = $_vf_lavfi
 CONFIG_VDA      = $_vda
 CONFIG_VDPAU    = $_vdpau
-CONFIG_XVMC     = $_xvmc
+CONFIG_VAAPI    = $_vaapi
 CONFIG_ZLIB     = $_zlib
 
 HAVE_GNU_AS     = $gnu_as
@@ -9434,6 +9457,7 @@ $def_tdfxvid
 $def_tga
 $def_v4l2
 $def_vdpau
+$def_vaapi
 $def_vesa
 $def_vidix
 $def_vidix_drv_cyberblade
@@ -9459,7 +9483,6 @@ $def_xinerama
 $def_xmga
 $def_xss
 $def_xv
-$def_xvmc
 $def_xvr100
 $def_yuv4mpeg
 $def_zr
@@ -9604,7 +9627,6 @@ $def_openssl
 #define CONFIG_SWSCALE_ALPHA 1
 #define SWS_MAX_FILTER_SIZE 256
 #define CONFIG_QSV 0
-#define CONFIG_VAAPI 0
 #define CONFIG_VALGRIND_BACKTRACE 0
 
 /* related to HW accelarations */
@@ -9692,6 +9714,8 @@ $def_struct_pollfd
 #define CONFIG_HEVCPARSE 1
 #define CONFIG_HEVC_SEI 1
 #define CONFIG_HUFFMAN 1
+#define CONFIG_IAMFDEC 1
+#define CONFIG_IAMFENC 1
 #define CONFIG_IDCTDSP 1
 #define CONFIG_IVIDSP 1
 #define CONFIG_LPC 1
@@ -9845,12 +9869,12 @@ print_enabled_filters(){
 print_enabled_components libavcodec/codec_list.c FFCodec codec_list $libavdecoders $libavencoders
 print_enabled_components libavcodec/parser_list.c AVCodecParser parser_list $libavparsers
 print_enabled_components libavcodec/bsf_list.c FFBitStreamFilter bitstream_filters $libavbsfs
-print_enabled_components libavdevice/indev_list.c AVInputFormat indev_list ""
-print_enabled_components libavdevice/outdev_list.c AVOutputFormat outdev_list ""
-print_enabled_components libavformat/demuxer_list.c AVInputFormat demuxer_list $libavdemuxers
-print_enabled_components libavformat/muxer_list.c AVOutputFormat muxer_list $libavmuxers
+print_enabled_components libavdevice/indev_list.c FFInputFormat indev_list ""
+print_enabled_components libavdevice/outdev_list.c FFOutputFormat outdev_list ""
+print_enabled_components libavformat/demuxer_list.c FFInputFormat demuxer_list $libavdemuxers
+print_enabled_components libavformat/muxer_list.c FFOutputFormat muxer_list $libavmuxers
 print_enabled_components libavformat/protocol_list.c URLProtocol url_protocols $libavprotocols
-print_enabled_filters libavfilter/filter_list.c AVFilter filter_list $libavfilters
+print_enabled_filters libavfilter/filter_list.c "$ffmpeg_filter_struct_name" filter_list $libavfilters
 
 fi
 

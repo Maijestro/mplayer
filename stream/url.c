@@ -20,7 +20,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +31,10 @@
 #include "mp_msg.h"
 #include "mp_strings.h"
 #include "help_mp.h"
+
+#ifdef __AMIGAOS4__
+#include <limits.h>
+#endif
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)-1)

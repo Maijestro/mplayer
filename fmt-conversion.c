@@ -138,7 +138,6 @@ static const struct {
     { IMGFMT_422P,       AV_PIX_FMT_YUVJ422P },
     { IMGFMT_444P,       AV_PIX_FMT_YUVJ444P },
     { IMGFMT_440P,       AV_PIX_FMT_YUVJ440P },
-    { IMGFMT_XVMC_IDCT_MPEG2, AV_PIX_FMT_XVMC },
     { 0,                      AV_PIX_FMT_NONE }
 };
 
@@ -147,6 +146,7 @@ enum AVPixelFormat imgfmt2pixfmt(int fmt)
     int i;
     enum AVPixelFormat pix_fmt;
     if (IMGFMT_IS_VDPAU(fmt)) return AV_PIX_FMT_VDPAU;
+    if (IMGFMT_IS_VAAPI(fmt)) return AV_PIX_FMT_VAAPI;
     for (i = 0; conversion_map[i].fmt; i++)
         if (conversion_map[i].fmt == fmt)
             break;

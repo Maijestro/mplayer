@@ -52,7 +52,11 @@ char *get_path(const char *filename){
 #ifdef __MINGW32__
 	const char *config_dir = "/mplayer";
 #else
+#ifdef __AMIGAOS4__
 	const char *config_dir = "/conf";
+#else
+	const char *config_dir = "/.mplayer";
+#endif
 #endif
 	int len;
 #ifdef CONFIG_MACOSX_BUNDLE
@@ -64,7 +68,13 @@ char *get_path(const char *filename){
 	char *bdl_url_path = NULL;
 #endif
 
+#ifdef __AMIGAOS4__
 	if ((homedir = "/PROGDIR") == NULL)
+#else
+	if ((homedir = getenv("MPLAYER_HOME")) != NULL)
+		config_dir = "";
+	else if ((homedir = getenv("HOME")) == NULL)
+#endif
 	{
 #if !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__OS2__)
 		return NULL;

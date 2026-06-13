@@ -57,7 +57,6 @@
 #include <inttypes.h>
 
 #include "config.h"
-#include "version.h"
 #include "mp_msg.h"
 #include "mp_msg.h"
 #include "help_mp.h"
@@ -80,51 +79,16 @@
 
 static const vo_info_t info =
 {
-	"SDL YUV/RGB/BGR renderer",
+	"SDL YUV/RGB/BGR renderer (SDL v1.1.7+ only!)",
 	"sdl",
 	"Ryan C. Gordon <icculus@lokigames.com>, Felix Buenemann <atmosfear@users.sourceforge.net>",
 	""
 };
 
-#if defined(__AMIGAOS4__)
-// markus
-//#include <classes/window.h>
-//#include <intuition/imageclass.h>
-//#include <../amigaos/window_icons.h>
-
-#include "../amigaos/debug.h"
-static char * window_title;
-extern char * filename;
-//extern struct kIcon fullscreenicon;
-
-static char *GetWindowTitle(void)
-{
-   if (window_title) free(window_title);
-
-   if (filename)
-   {
-      window_title = (char *)malloc(strlen("MPlayer - ") + strlen(filename) + 1);
-      strcpy(window_title, "MPlayer - ");
-      strcat(window_title, filename);
-   } else {
-      window_title = strdup("MPlayer " AMIGA_VERSION " (sdl)");
-   }
-
-   return window_title;
-}
-// end markus
-
-
-extern void AmigaOS_do_appwindow(void);
-extern struct Window *AmigaOS_GetSDLWindowPtr(void);
-extern void AmigaOS_do_applib(struct Window *w);
-#endif
-
-
 const LIBVO_EXTERN(sdl)
 
 #include "sdl_common.h"
-// #include <SDL/SDL_syswm.h>
+//#include <SDL/SDL_syswm.h>
 
 
 #ifdef SDL_ENABLE_LOCKS
@@ -519,7 +483,7 @@ static void set_fullmode (int mode) {
 	else {
 	if (mode < 0) {
         int i,j,imax;
-		mode = 0; // Default to the biggest mode availible
+		mode = 0; // Default to the biggest mode avaible
 		if ( mp_msg_test(MSGT_VO,MSGL_V) ) for(i=0;priv->fullmodes[i];++i)
  	           mp_msg(MSGT_VO,MSGL_V, "SDL Mode: %d:  %d x %d\n", i, priv->fullmodes[i]->w, priv->fullmodes[i]->h);
 		for(i = findArrayEnd(priv->fullmodes) - 1; i >=0; i--) {
@@ -545,7 +509,11 @@ static void set_fullmode (int mode) {
 	aspect_save_screenres(screen_surface_w, screen_surface_h);
 
 	/* calculate new video size/aspect */
+	#ifdef __AMIGAOS4__
+	if(priv->mode == YUV)
+#else
 	if(priv->mode == YUV && priv->fulltype&VOFLAG_FULLSCREEN)
+#endif
         aspect(&priv->dstwidth, &priv->dstheight, A_ZOOM);
 
 	/* try to change to given fullscreenmode */
@@ -643,8 +611,13 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 	/* Save the original Image size */
     priv->width  = width;
     priv->height = height;
+#ifdef __AMIGAOS4__
+    priv->dstwidth  = d_width  ? d_width  : vo_dwidth;
+    priv->dstheight = d_height ? d_height : vo_dheight;
+#else
     priv->dstwidth  = vo_dwidth;
     priv->dstheight = vo_dheight;
+#endif
     /* SDL can only scale YUV data */
     if(priv->mode == RGB || priv->mode == BGR) {
         priv->dstwidth = width;
@@ -658,9 +631,8 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 
     if (WinID < 0) {
 	/* Set output window title */
-	// rem markus 	SDL_WM_SetCaption (".: MPlayer : F = Fullscreen/Windowed : C = Cycle Fullscreen Resolutions :.", title);
-	// SDL_WM_SetCaption (title, title);
-	SDL_WM_SetCaption ( GetWindowTitle() , title);
+	SDL_WM_SetCaption (".: MPlayer : F = Fullscreen/Windowed : C = Cycle Fullscreen Resolutions :.", title);
+	//SDL_WM_SetCaption (title, title);
     }
 
 	priv->windowsize.w = priv->dstwidth;
@@ -671,10 +643,10 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 	 * bit 2 (0x04) enables software scaling (-zoom)
 	 * bit 3 (0x08) enables flipping (-flip)
 	 */
-	// printf("SDL: flags are set to: %i\n", flags);
-	// printf("SDL: Width: %i Height: %i D_Width %i D_Height: %i\n", width, height, d_width, d_height);
+//      printf("SDL: flags are set to: %i\n", flags);
+//	printf("SDL: Width: %i Height: %i D_Width %i D_Height: %i\n", width, height, d_width, d_height);
 	if(flags&VOFLAG_FLIPPING) {
-		mp_msg(MSGT_VO,MSGL_V, "SDL: Using flipped video (only with RGB/BGR/packed YUV)\n");
+		mp_msg(MSGT_VO,MSGL_V, "SDL: using flipped video (only with RGB/BGR/packed YUV)\n");
 		priv->flip = 1;
 	}
 	if(flags&VOFLAG_FULLSCREEN) {
@@ -693,7 +665,7 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 			SDL_ShowCursor(0);*/
 	} else
 	if(flags&VOFLAG_SWSCALE) {
-		mp_msg(MSGT_VO,MSGL_V, "SDL: Setting zoomed fullscreen with modeswitching\n");
+		mp_msg(MSGT_VO,MSGL_V, "SDL: setting zoomed fullscreen with modeswitching\n");
 		priv->fulltype = VOFLAG_SWSCALE;
 		set_fullmode(priv->fullmode);
 	}
@@ -704,19 +676,22 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 		||(strcmp(priv->driver, "Quartz") == 0)
 		||(strcmp(priv->driver, "cgx") == 0)
 		||(strcmp(priv->driver, "os4video") == 0)
+#ifdef __AMIGAOS4__
 		||(strcmp(priv->driver, "OS4") == 0)
+		||(strcmp(priv->driver, "os4") == 0)
+#endif
 		||((strcmp(priv->driver, "aalib") == 0) && priv->X)){
  			mp_msg(MSGT_VO,MSGL_V, "SDL: setting windowed mode\n");
             set_video_mode(priv->dstwidth, priv->dstheight, priv->bpp, priv->sdlflags);
 		}
 		else {
-			mp_msg(MSGT_VO,MSGL_V, "SDL: setting zoomed fullscreen with modeswitching\n");
+ 			mp_msg(MSGT_VO,MSGL_V, "SDL: setting zoomed fullscreen with modeswitching\n");
 			priv->fulltype = VOFLAG_SWSCALE;
 			set_fullmode(priv->fullmode);
 		}
 	}
 
-        if(!priv->surface) { // Cannot SetVideoMode
+        if(!priv->surface) { // cannot SetVideoMode
  		mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_SDL_FailedToSetVideoMode, SDL_GetError());
 		return -1;
 	}
@@ -771,7 +746,7 @@ static int setup_surfaces(void)
 
 	switch(priv->format) {
 	    	/* Initialize and create the RGB Surface used for video out in BGR/RGB mode */
-		// 	SDL_Surface *SDL_CreateRGBSurface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask);
+//SDL_Surface *SDL_CreateRGBSurface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask, Uint32 Amask);
 		//	SDL_SWSURFACE,SDL_HWSURFACE,SDL_SRCCOLORKEY, priv->flags?	guess: exchange Rmask and Bmask for BGR<->RGB
 		// 32 bit: a:ff000000 r:ff000 g:ff00 b:ff
 		// 24 bit: r:ff0000 g:ff00 b:ff
@@ -819,7 +794,7 @@ static int setup_surfaces(void)
     if(priv->mode != YUV) {
         if(!priv->rgbsurface) {
             mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_SDL_CouldntCreateARGBSurface, SDL_GetError());
-            return -1;
+   //         return -1;
         }
 
         priv->dblit = 0;
@@ -844,7 +819,7 @@ static int setup_surfaces(void)
  *  returns : non-zero on success, zero on error.
  **/
 
-// static int sdl_draw_frame (frame_t *frame)
+//static int sdl_draw_frame (frame_t *frame)
 static int draw_frame(uint8_t *src[])
 {
 	struct sdl_priv_s *priv = &sdl_priv;
@@ -903,7 +878,7 @@ static int draw_frame(uint8_t *src[])
  *  returns : non-zero on error, zero on success.
  **/
 
-// static uint32_t draw_slice(uint8_t *src[], uint32_t slice_num)
+//static uint32_t draw_slice(uint8_t *src[], uint32_t slice_num)
 static int draw_slice(uint8_t *image[], int stride[], int w,int h,int x,int y)
 {
 	struct sdl_priv_s *priv = &sdl_priv;
@@ -961,7 +936,6 @@ static void check_events (void)
 
 	/* Poll the waiting SDL Events */
 	while ( SDL_PollEvent(&event) ) {
-//DBUG("event.type = 0x%08lx\n",event.type);
 		switch (event.type) {
 
 			/* capture window resize events */
@@ -970,7 +944,7 @@ static void check_events (void)
                     set_video_mode(event.resize.w, event.resize.h, priv->bpp, priv->sdlflags);
 
 				/* save video extents, to restore them after going fullscreen */
-			 	// if(!(priv->surface->flags & SDL_FULLSCREEN)) {
+			 	//if(!(priv->surface->flags & SDL_FULLSCREEN)) {
 				    priv->windowsize.w = priv->surface->w;
 				    priv->windowsize.h = priv->surface->h;
 				//}
@@ -1013,27 +987,9 @@ static void check_events (void)
                                 else sdl_default_handle_event(&event);
 
 				break;
-
-
-case SDL_SYSWMEVENT:
-case SDL_USEREVENT:
-DBUG("0x%08lX or 0x%08lX\n",SDL_SYSWMEVENT,SDL_USEREVENT);
-break;
-
-
 			default: sdl_default_handle_event(&event); break;
 		}
 	}
-
-#if defined(__AMIGAOS4__)
-	AmigaOS_do_appwindow();
-//DBUG("Fullscreen = 0x%08lx (0x%08lx)\n",vo_fs,AmigaOS_GetSDLWindowPtr());
-	// "application.library"
-	if( !vo_fs )
-	{
-		AmigaOS_do_applib(AmigaOS_GetSDLWindowPtr());
-	}
-#endif
 }
 
 /* Erase (paint it black) the rectangle specified by x, y, w and h in the surface
@@ -1237,7 +1193,7 @@ query_format(uint32_t format)
 {
     switch(format){
     case IMGFMT_YV12:
-// It seems buggy (not hw accelerated), so just use YV12 instead!
+// it seems buggy (not hw accelerated), so just use YV12 instead!
 //    case IMGFMT_I420:
 //    case IMGFMT_IYUV:
         return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW | VFCAP_OSD |
@@ -1271,16 +1227,7 @@ uninit(void)
 		vo_x11_uninit();
 	}
 #endif
-
 	sdl_close();
-
-/*#if defined(__AMIGAOS4__)
-{
-	struct Window *w = AmigaOS_GetSDLWindowPtr();
-	//dispose_icon(w, &iconifyIcon );
-	dispose_icon(w, &fullscreenicon );
-}
-#endif*/
 
 	/* Cleanup SDL */
     vo_sdl_uninit();
@@ -1295,7 +1242,6 @@ static int preinit(const char *arg)
     char * sdl_driver = NULL;
     int sdl_hwaccel;
     int sdl_forcexv;
-    int supported_bpp;
     const opt_t subopts[] = {
 	    {"forcexv", OPT_ARG_BOOL,  &sdl_forcexv, NULL},
 	    {"hwaccel", OPT_ARG_BOOL,  &sdl_hwaccel, NULL},
@@ -1336,19 +1282,8 @@ static int preinit(const char *arg)
     if (!vo_sdl_init()) {
             mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_SDL_InitializationFailed, SDL_GetError());
 
-            return -1;
+   //         return -1;
     }
-
-  /* markus currently not working ns sm502 g4 with sdl hack
-     simple test to see if it's a qemu emulation pegasos sm502
-     I don't think anyone with a real amiga uses 16pp.
-     UAE yes but cpu does not emulate altivec
-  */
-     supported_bpp=SDL_VideoModeOK(640, 480, 32, SDL_FULLSCREEN);
-     if (SDL_HasAltiVec() && (supported_bpp <= 16)) {
-         mp_msg(MSGT_VO, MSGL_INFO, "VO: [sdl] Don't use me, maybe you are using QEMU G4 CPU, try -vo sdl_sm502\n");
-         return -1;
-     }
 
     SDL_VideoDriverName(priv->driver, 8);
     mp_msg(MSGT_VO,MSGL_INFO, MSGTR_LIBVO_SDL_UsingDriver, priv->driver);

@@ -1,3 +1,4 @@
+#include "../amigaos/amiga_version.h"
 /*
  * This file is part of MPlayer.
  *
@@ -121,6 +122,7 @@ extern struct kIcon fullscreenicon;
 
 // markus
 static char * window_title;
+static int window_shown = 0;
 extern char * filename;
 
 static char *GetWindowTitle(void)
@@ -129,11 +131,11 @@ static char *GetWindowTitle(void)
 
    if (filename)
    {
-      window_title = (char *)malloc(strlen("MPlayer - ") + strlen(filename) + 1);
-      strcpy(window_title, "MPlayer - ");
+      window_title = (char *)malloc(strlen("V-MPlayer - ") + strlen(filename) + 1);
+      strcpy(window_title, "V-MPlayer - ");
       strcat(window_title, filename);
    } else {
-      window_title = strdup("MPlayer " AMIGA_VERSION " (comp_yuv2)");
+      window_title = strdup("V-MPlayer (comp_yuv2)");
    }
 
    return window_title;
@@ -730,7 +732,7 @@ static ULONG Open_Window()
 					// #ifdef __amigaos4__
 					// WA_Title,	"MPlayer " VERSION " (comp_yuv2)",
 					// #endif
-					WA_ScreenTitle,	AMIGA_VERSION " (comp_yuv2)",
+					WA_ScreenTitle,	"V-MPlayer (comp_yuv2)",
 					WA_Title,		(ULONG) GetWindowTitle(),
 #ifdef PUBLIC_SCREEN
 					WA_PubScreen,	(ULONG) the_screen,
@@ -752,7 +754,7 @@ static ULONG Open_Window()
 					WA_Borderless,	(gfx_BorderMode == NOBORDER) ? TRUE : FALSE,
 					WA_SizeGadget,	TRUE,
 					WA_SizeBBottom,	TRUE,
-					WA_Hidden,		FALSE,
+					WA_Hidden,		TRUE,
 					WA_NewLookMenus,	TRUE,
 					WA_Activate,	WindowActivate,
 					WA_StayTop,		(is_ontop==1) ? TRUE : FALSE,
@@ -953,7 +955,10 @@ if(is_fullscreen)
 		return INVALID_ID;
 	}
 
-	IIntuition->SetWindowAttrs(My_Window, WA_Left,left, WA_Top,top, WA_Width,out_width, WA_Height,out_height, TAG_DONE);
+	/* Use ChangeWindowBox to preserve position and include borders */
+	IIntuition->ChangeWindowBox(My_Window, left, top,
+		out_width  + My_Window->BorderLeft + My_Window->BorderRight,
+		out_height + My_Window->BorderTop  + My_Window->BorderBottom);
 
 IDBUG("Screen w %ld h %ld\n",the_screen->Width,the_screen->Height);
 
@@ -1444,6 +1449,7 @@ backfillhook = NULL;
 	  EmptyPointer=NULL;
 	}
 	gfx_ReleaseArg();
+if (window_title) { free(window_title); window_title = NULL; }
 }
 
 /****************************** CONTROL *****************************/
@@ -1460,6 +1466,7 @@ static int control(uint32_t request, void *data)
 			set_gfx_rendering_option();
 
 			FreeGfx();
+			window_shown = 0;
 			if ( config(org_amiga_image_width, org_amiga_image_height, window_width, window_height, is_fullscreen, NULL, amiga_image_format) < 0) return VO_FALSE;
 			return VO_TRUE;
 
@@ -1822,6 +1829,8 @@ static void voprocess(void)
 
 			if (My_Window)
 			{
+				/* Show window on first frame to avoid gray flash */
+				if (!window_shown) { IIntuition->ShowWindow(My_Window, NULL); IIntuition->WindowToFront(My_Window); IIntuition->ScreenToFront(My_Window->WScreen); IIntuition->ActivateWindow(My_Window); window_shown = 1; }
 				if (vsync_is_enabled==1)
 				{
 					IGraphics->WaitBOVP(&(My_Window->WScreen->ViewPort));

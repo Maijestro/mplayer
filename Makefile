@@ -24,11 +24,12 @@ include config.mak
 ###### variable declarations #######
 
 # local fallbacks for missing operating system features
-OS_FEATURE-$(GETTIMEOFDAY)           += osdep/gettimeofday.c
-#OS_FEATURE-$(GLOB_WIN)               += osdep/glob-win.c
+# the fallback for gettimeofday should actually no longet be needed
+#OS_FEATURE-$(GETTIMEOFDAY)           += osdep/gettimeofday.c
+OS_FEATURE-$(GLOB_WIN)               += osdep/glob-win.c
 OS_FEATURE-$(MMAP)                   += osdep/mmap-os2.c
 OS_FEATURE-$(SETENV)                 += osdep/setenv.c
-#OS_FEATURE-$(SHMEM)                  += osdep/shmem.c
+OS_FEATURE-$(SHMEM)                  += osdep/shmem.c
 OS_FEATURE-$(STRSEP)                 += osdep/strsep.c
 OS_FEATURE-$(VSSCANF)                += osdep/vsscanf.c
 
@@ -70,7 +71,9 @@ SRCS_COMMON-$(CONFIG_VF_LAVFI)      +=  libmpcodecs/vf_lavfi.c
 SRCS_COMMON-$(FFMPEG_A)              += libmpcodecs/vf_fspp.c           \
                                         libmpcodecs/vf_qp.c             \
                                         libmpcodecs/vf_spp.c            \
-                                        libmpcodecs/vf_uspp.c           \
+
+# needs update for missing coded_frame
+#libmpcodecs/vf_uspp.c           \
 
 SRCS_COMMON-$(FREETYPE)              += sub/font_load_ft.c
 SRCS_COMMON-$(FTP)                   += stream/stream_ftp.c
@@ -80,7 +83,7 @@ SRCS_COMMON-$(HAVE_SYS_MMAN_H)       += libaf/af_export.c osdep/mmap_anon.c
 SRCS_COMMON-$(JPEG)                  += libmpcodecs/vd_ijpg.c
 SRCS_COMMON-$(LADSPA)                += libaf/af_ladspa.c
 SRCS_COMMON-$(LIBA52)                += libmpcodecs/ad_liba52.c
-SRCS_COMMON-$(FTP)                += libmpcodecs/vf_ass.c            \
+SRCS_COMMON-$(LIBASS)                += libmpcodecs/vf_ass.c            \
                                         sub/ass_mp.c                    \
                                         sub/subassconvert.c             \
 
@@ -194,7 +197,7 @@ SRCS_COMMON-$(TV_V4L1)               += stream/tvi_v4l.c                \
 SRCS_COMMON-$(TV_V4L2)               += stream/tvi_v4l2.c               \
                                         stream/audio_in.c
 SRCS_COMMON-$(UNRAR_EXEC)            += sub/unrar_exec.c
-SRCS_COMMON-$(VCD)                   += stream/stream_vcd_amigaos.c
+SRCS_COMMON-$(VCD)                   += stream/stream_vcd.c
 SRCS_COMMON-$(VORBIS)                += libmpcodecs/ad_libvorbis.c      \
                                         libmpdemux/demux_ogg.c
 SRCS_COMMON-$(VSTREAM)               += stream/stream_vstream.c
@@ -259,7 +262,7 @@ SRCS_COMMON = asxparser.c                       \
               mp_strings.c                      \
               mpcommon.c                        \
               parser-cfg.c                      \
-              amigaos/path.c                            \
+              path.c                            \
               playtree.c                        \
               playtreeparser.c                  \
               subopt-helper.c                   \
@@ -438,7 +441,7 @@ SRCS_COMMON = asxparser.c                       \
               sub/subreader.c                   \
               sub/vobsub.c                      \
               $(SRCS_COMMON-yes)                \
-              $(OS_FEATURE-no)
+              $(OS_FEATURE-yes)
 
 # MPlayer
 SRCS_MPLAYER-$(3DFX)         += libvo/vo_3dfx.c
@@ -509,7 +512,6 @@ SRCS_MPLAYER-$(GUI_WIN32)    += gui/win32/dialogs.c                     \
                                 gui/win32/widgetrender.c                \
                                 gui/win32/wincfg.c                      \
 
-SRCS_MPLAYER-$(IVTV)         += libao2/ao_ivtv.c libvo/vo_ivtv.c
 SRCS_MPLAYER-$(JACK)         += libao2/ao_jack.c
 SRCS_MPLAYER-$(JOYSTICK)     += input/joystick.c
 SRCS_MPLAYER-$(JPEG)         += libvo/vo_jpeg.c
@@ -543,8 +545,25 @@ SRCS_MPLAYER-$(QUARTZ)        += libvo/vo_quartz.c libvo/osx_common.c
 SRCS_MPLAYER-$(S3FB)          += libvo/vo_s3fb.c
 SRCS_MPLAYER-$(SDL)           += libao2/ao_sdl.c                        \
                                  libvo/vo_sdl.c                         \
-                                 libvo/vo_sdl_sm502.c                   \
                                  libvo/sdl_common.c
+
+SRCS_MPLAYER-yes          += amigaos/amigaos_stuff.c \
+                             amigaos/arexx.c \
+                             amigaos/menu.c \
+                             amigaos/appwindow.c \
+                             amigaos/workaround_snapshot.c \
+                             amigaos/asm.c \
+                             amigaos/window_icons.c \
+                             libvo/cgx_common.c \
+                             libvo/memcpy.c \
+                             libvo/vo_cgx_wpa.c \
+                             libvo/vo_comp.c \
+                             libvo/vo_comp_yuv.c \
+                             libvo/vo_comp_yuv2.c \
+                             libvo/vo_p96pip.c \
+                             libvo/vo_amiga.c \
+                             libvo/vo_vaapi.c \
+                             libao2/ao_ahi_dev2.c
 SRCS_MPLAYER-$(SGIAUDIO)      += libao2/ao_sgi.c
 SRCS_MPLAYER-$(SNDIO)         += libao2/ao_sndio.c
 SRCS_MPLAYER-$(SUNAUDIO)      += libao2/ao_sun.c
@@ -554,6 +573,7 @@ SRCS_MPLAYER-$(TDFXVID)       += libvo/vo_tdfx_vid.c
 SRCS_MPLAYER-$(TGA)           += libvo/vo_tga.c
 SRCS_MPLAYER-$(V4L2)          += libvo/vo_v4l2.c
 SRCS_MPLAYER-$(V4L2)          += libao2/ao_v4l2.c
+SRCS_MPLAYER-$(VAAPI)         += libvo/vo_vaapi.c
 SRCS_MPLAYER-$(VDPAU)         += libvo/vo_vdpau.c
 SRCS_MPLAYER-$(VESA)          += libvo/gtf.c                            \
                                  libvo/vo_vesa.c                        \
@@ -590,7 +610,6 @@ SRCS_MPLAYER-$(X11)           += libvo/vo_x11.c libvo/vo_xover.c        \
 SRCS_MPLAYER-$(XMGA)          += libvo/vo_xmga.c
 SRCS_MPLAYER-$(XV)            += libvo/vo_xv.c
 SRCS_MPLAYER-$(XVIDIX)        += libvo/vo_xvidix.c
-SRCS_MPLAYER-$(XVMC)          += libvo/vo_xvmc.c
 SRCS_MPLAYER-$(XVR100)        += libvo/vo_xvr100.c
 SRCS_MPLAYER-$(YUV4MPEG)      += libvo/vo_yuv4mpeg.c
 SRCS_MPLAYER-$(ZR)            += libvo/jpeg_enc.c libvo/vo_zr.c libvo/vo_zr2.c
@@ -613,23 +632,6 @@ SRCS_MPLAYER = command.c                \
                libvo/vo_mpegpes.c       \
                libvo/vo_null.c          \
                sub/spuenc.c             \
-               amigaos/amigaos_stuff.c  \
-               amigaos/arexx.c          \
-               amigaos/menu.c           \
-               amigaos/appwindow.c      \
-               amigaos/workaround_snapshot.c \
-               amigaos/asm.c            \
-               amigaos/window_icons.c   \
-               libvo/cgx_common.c       \
-               libvo/vo_comp_yuv2.c     \
-               libvo/vo_comp_yuv.c      \
-               libvo/vo_comp.c          \
-               libvo/vo_cgx_wpa.c       \
-               libvo/vo_p96pip.c        \
-               libvo/vo_pip.c           \
-               libvo/vo_amiga.c         \
-               libvo/memcpy.c           \
-               libao2/ao_ahi_dev2.c     \
                $(SRCS_MPLAYER-yes)
 
 #MEncoder
@@ -685,7 +687,7 @@ $(foreach suffix,.c .cpp .m .S,$(eval DEP_FILES := $(DEP_FILES:$(suffix)=.d)))
 ALL_PRG-$(MPLAYER)  += mplayer$(EXESUF)
 ALL_PRG-$(MENCODER) += mencoder$(EXESUF)
 
-INSTALL_TARGETS-$(GUI)      += install-gui
+INSTALL_TARGETS-$(GUI)      += install-gui install-gui-man
 INSTALL_TARGETS-$(MENCODER) += install-mencoder install-mencoder-man
 INSTALL_TARGETS-$(MPLAYER)  += install-mplayer  install-mplayer-man
 
@@ -729,30 +731,34 @@ ADDSUFFIXES     = $(foreach suf,$(1),$(addsuffix $(suf),$(2)))
 ADD_ALL_DIRS    = $(call ADDSUFFIXES,$(1),$(ALL_DIRS))
 ADD_ALL_EXESUFS = $(1) $(call ADDSUFFIXES,$(EXESUFS_ALL),$(1))
 
+ALL_MSGS = $(foreach lang,$(filter-out $(firstword $(MSG_LANGS)),$(MSG_LANGS)),help/po/$(lang).mo)
+
 GUI_ICONSIZES = 16x16 22x22 24x24 32x32 48x48 256x256
+
+
 
 ###### generic rules #######
 
-all: flexcat $(ALL_PRG-yes)
+all: $(ALL_PRG-yes) $(ALL_MSGS)
 
 %.o: %.S
-	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) $(AS_C) $(AS_O) $<
 
 %.o: %.c
-	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) $(CC_C) $(CC_O) $<
 
 %.o: %.cpp
-	$(CC) $(CC_DEPFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CXXFLAGS) $(CXX_C) $(CXX_O) $<
 
 %.o: %.m
-	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) $(CC_C) $(CC_O) $<
 
 %-rc.o: %.rc
-	$(WINDRES) -I. $< -o $@
+	$(WINDRES) -I. $(WINDRES_O) $<
 
 ffmpeglibs: $(FFMPEGLIBS)
 
-$(FFMPEGLIBS): $(FFMPEGFILES) config.h
+$(FFMPEGLIBS): config.h
 	$(MAKE) -C ffmpeg $(@:ffmpeg/%=%)
 
 mencoder$(EXESUF): $(MENCODER_DEPS)
@@ -760,10 +766,10 @@ mencoder$(EXESUF): EXTRALIBS += $(EXTRALIBS_MENCODER)
 mplayer$(EXESUF): $(MPLAYER_DEPS)
 mplayer$(EXESUF): EXTRALIBS += $(EXTRALIBS_MPLAYER)
 mencoder$(EXESUF) mplayer$(EXESUF):
-	$(CC) -o $@ $^ $(EXTRALIBS)
+	$(CC) $(CC_LINK_O) $^ $(EXTRALIBS)
 
 codec-cfg-test$(EXESUF): HOSTCFLAGS := $(HOSTCFLAGS) -DTESTING
-#codec-cfg$(EXESUF) codecs2html$(EXESUF):  HOSTCFLAGS := $(HOSTCFLAGS) -DCODECS2HTML
+codec-cfg$(EXESUF) codecs2html$(EXESUF):  HOSTCFLAGS := $(HOSTCFLAGS) -DCODECS2HTML
 codec-cfg$(EXESUF) codec-cfg-test$(EXESUF) codecs2html$(EXESUF): codec-cfg.c codec-cfg.h help_mp.h
 	$(HOST_CC) $(HOSTCFLAGS) -o $@ $<
 
@@ -782,21 +788,30 @@ config.mak: configure
 	@echo "####### Please run ./configure again - it's changed! #######"
 	@echo "############################################################"
 
-checkhelp: help/help_mp*.h
-	help/help_check.sh $(CC) $^
+helpcheck: $(addsuffix elpcheck,$(wildcard help/help_mp-*.h))
+
+%.helpcheck: %.h
+	help/help_check.sh $(CC) $<
 
 help_mp.h: help/help_mp-en.h $(HELP_FILE)
 	help/help_create.sh $(HELP_FILE) $(CHARSET)
+
+help/po/%.po: help/help_mp-%.h help/help_mp-en.h
+	mkdir -p $(@D)
+	help/help_create_po.pl $< $@
+
+%.mo: %.po
+	msgfmt $< -o $@
 
 # rebuild version.h each time the working copy is updated
 version.h: version.sh $(wildcard .svn/entries .git/logs/HEAD)
 	./$< `$(CC) -dumpversion`
 
 %$(EXESUF): %.c
-	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) $(CC_LINK_O) $^ $(LIBS)
 
 %.ho: %.h
-	$(CC) $(CFLAGS) -Wno-unused -c -o $@ -x c $<
+	$(CC) $(CFLAGS) -Wno-unused -c $(CC_O) -x c $<
 
 checkheaders: $(ALLHEADERS:.h=.ho)
 
@@ -843,7 +858,7 @@ mpcommon.o osdep/mplayer-rc.o gui/dialog/about.o gui/win32/gui.o: version.h
 
 osdep/mplayer-rc.o: osdep/mplayer.exe.manifest
 
-gui/%: CFLAGS += -Wno-strict-prototypes
+gui/%: CFLAGS += -DLOCALEDIR=\"$(prefix)/share/locale\" -Wno-strict-prototypes
 
 loader/%: CFLAGS += -fno-omit-frame-pointer $(CFLAGS_NO_OMIT_LEAF_FRAME_POINTER)
 #loader/%: CFLAGS += -Ddbg_printf=__vprintf -DTRACE=__vprintf -DDETAILED_OUT
@@ -873,13 +888,14 @@ install-dirs:
 install-%: %$(EXESUF) install-dirs
 	$(INSTALL) -m 755 $(INSTALLSTRIP) $< $(BINDIR)
 
-install-gui: install-mplayer install-gui-icons
+install-gui: install-mplayer install-gui-icons install-gui-msg
 	-ln -sf mplayer$(EXESUF) $(BINDIR)/gmplayer$(EXESUF)
 	$(INSTALL) -d $(DATADIR)/skins $(prefix)/share/applications
 	$(INSTALL) -m 644 etc/mplayer.desktop $(prefix)/share/applications/
 
 install-gui-icons:    $(foreach size,$(GUI_ICONSIZES),install-gui-icon-$(size))
 install-gui-man:      $(foreach lang,$(MAN_LANGS),install-gui-man-$(lang))
+install-gui-msg:      $(foreach lang,$(filter-out $(firstword $(MSG_LANGS)),$(MSG_LANGS)),install-gui-msg-$(lang))
 install-mencoder-man: $(foreach lang,$(MAN_LANGS),install-mencoder-man-$(lang))
 install-mplayer-man:  $(foreach lang,$(MAN_LANGS),install-mplayer-man-$(lang))
 
@@ -904,6 +920,12 @@ install-gui-man-$(lang): install-mplayer-man-$(lang)
 	cd $(MANDIR)/$(lang)/man1/ && ln -sf mplayer.1 gmplayer.1
 endef
 
+define GUI_MSG_RULE
+install-gui-msg-$(lang): help/po/$(lang).mo
+	$(INSTALL) -d $(prefix)/share/locale/$(lang)/LC_MESSAGES
+	$(INSTALL) -m 644 help/po/$(lang).mo $(prefix)/share/locale/$(lang)/LC_MESSAGES/mplayer.mo
+endef
+
 define MENCODER_MAN_RULE
 install-mencoder-man-$(lang): install-mplayer-man-$(lang)
 	cd $(MANDIR)/$(lang)/man1 && ln -sf mplayer.1 mencoder.1
@@ -917,17 +939,18 @@ endef
 
 $(foreach size,$(GUI_ICONSIZES),$(eval $(GUI_ICON_RULE)))
 $(foreach lang,$(filter-out en,$(MAN_LANG_ALL)),$(eval $(GUI_MAN_RULE)))
+$(foreach lang,$(MSG_LANGS),$(eval $(GUI_MSG_RULE)))
 $(foreach lang,$(filter-out en,$(MAN_LANG_ALL)),$(eval $(MENCODER_MAN_RULE)))
 $(foreach lang,$(filter-out en,$(MAN_LANG_ALL)),$(eval $(MPLAYER_MAN_RULE)))
 
 uninstall:
 	rm -f $(BINDIR)/mplayer$(EXESUF) $(BINDIR)/gmplayer$(EXESUF)
 	rm -f $(BINDIR)/mencoder$(EXESUF)
-	rm -f $(MANDIR)/man1/mencoder.1 $(MANDIR)/man1/mplayer.1
 	rm -f $(foreach size,$(GUI_ICONSIZES),$(prefix)/share/icons/hicolor/$(size)/apps/mplayer.png)
 	rm -f $(prefix)/share/applications/mplayer.desktop
-	rm -f $(MANDIR)/man1/mplayer.1 $(MANDIR)/man1/mencoder.1
-	rm -f $(foreach lang,$(MAN_LANGS),$(foreach man,mplayer.1 mencoder.1,$(MANDIR)/$(lang)/man1/$(man)))
+	rm -f $(MANDIR)/man1/mplayer.1 $(MANDIR)/man1/mencoder.1 $(MANDIR)/man1/gmplayer.1
+	rm -f $(foreach lang,$(MAN_LANGS),$(foreach man,mplayer.1 mencoder.1 gmplayer.1,$(MANDIR)/$(lang)/man1/$(man)))
+	rm -f $(foreach lang,$(MSG_LANGS),$(prefix)/share/locale/$(lang)/LC_MESSAGES/mplayer.mo)
 
 clean: testsclean toolsclean driversclean dhahelperclean
 	-$(MAKE) -C ffmpeg $@
@@ -937,7 +960,7 @@ clean: testsclean toolsclean driversclean dhahelperclean
 	-rm -f $(VIDIX_PCI_FILES)
 	-rm -f $(call ADD_ALL_EXESUFS,codec-cfg cpuinfo)
 	-rm -f codecs.conf.h help_mp.h version.h
-	-rm -rf DOCS/tech/doxygen DOCS/HTML
+	-rm -rf DOCS/tech/doxygen DOCS/HTML help/po
 
 distclean: clean
 	-$(MAKE) -C ffmpeg $@
@@ -954,8 +977,6 @@ TAGS:
 tags:
 	rm -f $@; find . -name '*.[chS]' -o -name '*.asm' | xargs ctags -a
 
-flexcat:
-	$(FC) locale/MPlayer.cd amigaos/MPlayer_catalog.h=amigaos/CatCompOS4_h.sd
 
 
 ###### regression tests #######
@@ -1041,12 +1062,12 @@ TOOLS/subrip$(EXESUF): path.o sub/vobsub.o sub/spudec.o sub/unrar_exec.o \
     ffmpeg/libswscale/libswscale.a ffmpeg/libavutil/libavutil.a $(MP_MSG_OBJS)
 
 mplayer-nomain.o: mplayer.c
-	$(CC) $(CFLAGS) -DDISABLE_MAIN -c -o $@ $<
+	$(CC) $(CFLAGS) -DDISABLE_MAIN -c $(CC_O) $<
 
 TOOLS/netstream$(EXESUF): TOOLS/netstream.c
 TOOLS/vivodump$(EXESUF): TOOLS/vivodump.c
 TOOLS/netstream$(EXESUF) TOOLS/vivodump$(EXESUF): $(subst mplayer.o,mplayer-nomain.o,$(OBJS_MPLAYER)) $(filter-out %mencoder.o,$(OBJS_MENCODER)) $(OBJS_COMMON) $(COMMON_LIBS)
-	$(CC) $(CC_DEPFLAGS) $(CFLAGS) -o $@ $^ $(EXTRALIBS_MPLAYER) $(EXTRALIBS_MENCODER) $(EXTRALIBS)
+	$(CC) $(CC_DEPFLAGS) $(CFLAGS) $(CC_LINK_O) $^ $(EXTRALIBS_MPLAYER) $(EXTRALIBS_MENCODER) $(EXTRALIBS)
 
 REAL_SRCS    = $(wildcard TOOLS/realcodecs/*.c)
 REAL_TARGETS = $(REAL_SRCS:.c=.so.6.0)
@@ -1063,7 +1084,7 @@ realcodecs: CFLAGS += -g
 
 KERNEL_INC = /lib/modules/`uname -r`/build/include
 KERNEL_VERSION = $(shell grep RELEASE $(KERNEL_INC)/linux/version.h | cut -d'"' -f2)
-KERNEL_CFLAGS = -O2 -pipe -ffast-math -fomit-frame-pointer -fno-tree-vectorize -fno-asynchronous-unwind-tables -D_ARCH_G4 -maltivec -mabi=altivec -mcpu=7450 -mtune=7450 -D__KERNEL__ -DMODULE -Wall -I$(KERNEL_INC) -include $(KERNEL_INC)/linux/modversions.h
+KERNEL_CFLAGS = -O2 -D__KERNEL__ -DMODULE -Wall -I$(KERNEL_INC) -include $(KERNEL_INC)/linux/modversions.h
 KERNEL_OBJS = $(addprefix drivers/, mga_vid.o tdfx_vid.o radeon_vid.o rage128_vid.o)
 MODULES_DIR = /lib/modules/$(KERNEL_VERSION)/misc
 DRIVER_OBJS = $(KERNEL_OBJS) drivers/mga_vid_test drivers/tdfx_vid_test
@@ -1127,8 +1148,10 @@ dhahelperclean:
 -include $(DEP_FILES) $(DRIVER_DEP_FILES) $(TESTS_DEP_FILES) $(TOOLS_DEP_FILES) $(DHAHELPER_DEP_FILES)
 
 .PHONY: all doxygen *install* *tools drivers dhahelper*
-.PHONY: checkheaders *clean tests check_checksums fatetest checkhelp
+.PHONY: checkheaders *clean tests check_checksums fatetest helpcheck
 .PHONY: doc html-chunked* html-single* xmllint*
+
+.SECONDARY: $(patsubst %.mo,%.po,$(ALL_MSGS))
 
 # Disable suffix rules.  Most of the builtin rules are suffix rules,
 # so this saves some time on slow systems.

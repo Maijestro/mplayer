@@ -220,6 +220,14 @@ static int lavf_check_file(demuxer_t *demuxer){
             avformat_network_init();
             priv->use_lavf_netstream  = 1;
         }
+        /* AmigaOS4: HTTPS direkt via FFmpeg oeffnen fuer besseres Buffering */
+        #ifdef __amigaos4__
+        if (demuxer->stream->url && strncmp(demuxer->stream->url, "https://", 8) == 0) {
+            mp_msg(MSGT_HEADER,MSGL_V,"LAVF: HTTPS direct FFmpeg streaming (AmigaOS4)\n");
+            avformat_network_init();
+            priv->use_lavf_netstream = 1;
+        }
+        #endif
     }
 
     return DEMUXER_TYPE_LAVF;
@@ -309,8 +317,8 @@ static void handle_stream(demuxer_t *demuxer, AVFormatContext *avfc, int i) {
             wf= calloc(sizeof(*wf) + codec->extradata_size, 1);
             codec->codec_tag = mp_codec_id2tag(codec->codec_id, codec->codec_tag, 1);
             wf->wFormatTag= codec->codec_tag;
-            wf->nChannels= codec->channels;
-            sh_audio->channel_layout = codec->channel_layout;
+            wf->nChannels= codec->ch_layout.nb_channels;
+            sh_audio->channel_layout = codec->ch_layout.u.mask;
             wf->nSamplesPerSec= codec->sample_rate;
             wf->nAvgBytesPerSec= codec->bit_rate/8;
             wf->nBlockAlign= codec->block_align ? codec->block_align : 1;
@@ -332,7 +340,7 @@ static void handle_stream(demuxer_t *demuxer, AVFormatContext *avfc, int i) {
             sh_audio->audio.dwRate  /= g;
 //          printf("sca:%d rat:%d fs:%d sr:%d ba:%d\n", sh_audio->audio.dwScale, sh_audio->audio.dwRate, codec->frame_size, codec->sample_rate, codec->block_align);
             sh_audio->format= codec->codec_tag;
-            sh_audio->channels= codec->channels;
+            sh_audio->channels= codec->ch_layout.nb_channels;
             sh_audio->samplerate= codec->sample_rate;
             sh_audio->i_bps= codec->bit_rate/8;
             switch (codec->codec_id) {
@@ -378,7 +386,7 @@ static void handle_stream(demuxer_t *demuxer, AVFormatContext *avfc, int i) {
         }
         case AVMEDIA_TYPE_VIDEO:{
             AVDictionaryEntry *rot = av_dict_get(st->metadata, "rotate",   NULL, 0);
-            const int32_t *disp_matrix = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
+            const int32_t *disp_matrix = (const int32_t *)av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
             sh_video_t* sh_video;
             BITMAPINFOHEADER *bih;
             sh_video=new_sh_video_vid(demuxer, i, priv->video_streams);
@@ -686,6 +694,7 @@ static int demux_lavf_fill_buffer(demuxer_t *demux, demux_stream_t *dsds){
 
     demux->filepos=stream_tell(demux->stream);
 
+    memset(&pkt, 0, sizeof(pkt));
     if(av_read_frame(priv->avfc, &pkt) < 0)
         return 0;
 
@@ -947,8 +956,10 @@ static void demux_close_lavf(demuxer_t *demuxer)
          av_freep(&priv->avfc->key);
          avformat_close_input(&priv->avfc);
         }
-        if (priv->pb) av_freep(&priv->pb->buffer);
-        av_freep(&priv->pb);
+        if (priv->pb) {
+            av_freep(&priv->pb->buffer);
+            avio_context_free(&priv->pb);
+        }
         free(priv); demuxer->priv= NULL;
     }
 }

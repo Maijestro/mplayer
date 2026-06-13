@@ -1,3 +1,5 @@
+#include "config.h"
+#ifdef CONFIG_ASS
 /*
  * Copyright (C) 2006 Evgeniy Stepanov <eugeni.stepanov@gmail.com>
  *
@@ -388,3 +390,5 @@ void eosd_ass_init(ASS_Library *ass_library)
 	if (!eosd_registered(&eosd_ass))
 		eosd_register(&eosd_ass);
 }
+
+#endif /* CONFIG_ASS */

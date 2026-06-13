@@ -1,4 +1,4 @@
-// $Revision: 38423 $
+// $Revision: 38555 $
 // MASTER FILE. Use this file as base for translations.
 // Translated files should be sent to the mplayer-DOCS mailing list or
 // to the help messages maintainer, see DOCS/tech/MAINTAINERS.
@@ -658,8 +658,9 @@ static const char help_text[] = MSGTR_Help;
 #define MSGTR_GUI_FilterFontBitmap "Bitmap fonts (*.desc)"
 #define MSGTR_GUI_FilterFontTTF "TrueType fonts (*.ttf)"
 #define MSGTR_GUI_FilterFontType1 "Type1 fonts (*.pfb)"
+#define MSGTR_GUI_FilterImageAudio "Audio file cue sheet"
 #define MSGTR_GUI_FilterImageCD "CD image cue sheet"
-#define MSGTR_GUI_FilterImageCue "CD/VCD/SVCD image cue sheet"
+#define MSGTR_GUI_FilterImageCue "Audio/CD/VCD/SVCD image cue sheets"
 #define MSGTR_GUI_FilterImageDVD "DVD image/copy"
 #define MSGTR_GUI_FilterImageVCD "VCD/SVCD image cue sheet"
 #define MSGTR_GUI_FilterMediumMatroska "Matroska media"
@@ -725,7 +726,6 @@ static const char help_text[] = MSGTR_Help;
 #define MSGTR_GUI_MSG_SkinCfgError "Config file processing error with skin '%s'\n"
 #define MSGTR_GUI_MSG_SkinCfgNotFound "Skin '%s' not found.\n"
 #define MSGTR_GUI_MSG_SkinCfgSelectedNotFound "Selected skin '%s' not found, trying skin 'default'...\n"
-#define MSGTR_GUI_MSG_SkinDirNotFound "No skin directory found! Please install a skin."
 #define MSGTR_GUI_MSG_SkinErrorBitmap16Bit "Color depth of bitmap %s is 16 bits or less which is not supported.\n"
 #define MSGTR_GUI_MSG_SkinErrorDefault "Default (%d) out of range\n"
 #define MSGTR_GUI_MSG_SkinErrorItem "This item is not supported by '%s'.\n"
@@ -1635,10 +1635,7 @@ static const char help_text[] = MSGTR_Help;
 #define MSGTR_MPCODECS_ArithmeticMeanOfQP "[VD_FFMPEG] Arithmetic mean of QP: %2.4f, Harmonic mean of QP: %2.4f\n"
 #define MSGTR_MPCODECS_DRIFailure "[VD_FFMPEG] DRI failure.\n"
 #define MSGTR_MPCODECS_CouldntAllocateImageForCodec "[VD_FFMPEG] Couldn't allocate image for codec.\n"
-#define MSGTR_MPCODECS_XVMCAcceleratedMPEG2 "[VD_FFMPEG] XVMC-accelerated MPEG-2.\n"
 #define MSGTR_MPCODECS_TryingPixfmt "[VD_FFMPEG] Trying pixfmt=%d.\n"
-#define MSGTR_MPCODECS_McGetBufferShouldWorkOnlyWithXVMC "[VD_FFMPEG] The mc_get_buffer should work only with XVMC acceleration!!"
-#define MSGTR_MPCODECS_OnlyBuffersAllocatedByVoXvmcAllowed "[VD_FFMPEG] Only buffers allocated by vo_xvmc allowed.\n"
 
 // libmpcodecs/ve_lavc.c
 #define MSGTR_MPCODECS_HighQualityEncodingSelected "[VE_LAVC] High quality encoding selected (non-realtime)!\n"

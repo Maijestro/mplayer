@@ -74,6 +74,8 @@ static void *ThreadProc(void *s);
 #include "stream.h"
 #include "cache2.h"
 #include "mp_global.h"
+#ifdef __amigaos4__
+#endif
 
 typedef struct {
   // constats:
@@ -117,19 +119,30 @@ static void cache_wakeup(stream_t *s)
 }
 
 #ifdef __amigaos4__
+#include <proto/amisslmaster.h>
+#include <proto/amissl.h>
+#include <libraries/amisslmaster.h>
+#include <libraries/amissl.h>
+#include <amissl/tags.h>
+
 static struct Process *CurrentTask;
 static void     *cache_arg;
 static void *(*cache_proc) (void *s);
 
+#define GETINTERFACE(iface, base) (iface = (APTR)GetInterface((struct Library *)(base), "main", 1L, NULL))
+#define DROPINTERFACE(iface)      (DropInterface((struct Interface *)iface), iface = NULL)
 
 void thread_starter()
 {
-        // copy to local.
         void    *_cache_arg = cache_arg;
         void *(*_cache_proc) (void *s) = cache_proc;
-        // ready
+
+        /* v144: IAmiSSL vom Hauptprozess direkt uebernehmen */
+        extern struct AmiSSLIFace *IAmiSSL;
+        extern struct AmiSSLIFace *main_IAmiSSL;
+        IAmiSSL = main_IAmiSSL;
+
         Signal( CurrentTask, SIGF_CHILD );
-        // start
         _cache_proc(_cache_arg);
 }
 
@@ -247,10 +260,18 @@ static int cache_fill(cache_vars_t *s)
       // issues with e.g. mov or badly interleaved files
       if(read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
       {
-        cache_flush(s);
-        if(s->stream->eof) stream_reset(s->stream);
-        stream_seek_internal(s->stream,read);
-        mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
+        /* AmigaOS4: Skip seek for HTTPS streams to avoid AmiSSL race condition */
+        #ifdef __amigaos4__
+        extern char *filename;
+        int is_https = (s->stream->url && (strncmp(s->stream->url, "https://", 8) == 0));
+        if (!is_https)
+        #endif
+        {
+          cache_flush(s);
+          if(s->stream->eof) stream_reset(s->stream);
+          stream_seek_internal(s->stream,read);
+          mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
+        }
       }
   }
 
@@ -531,10 +552,26 @@ int stream_enable_cache(stream_t *stream,int64_t size,int64_t min,int64_t seek_l
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
     return 1;
   }
+  /* AmigaOS4: HTTPS Cache deaktivieren wegen IAmiSSL Multi-Task Problem */
+  #ifdef __amigaos4__
+  if (stream->url && strncmp(stream->url, "https://", 8) == 0) {
+    mp_msg(MSGT_CACHE,MSGL_STATUS,"\rHTTPS: Cache disabled on AmigaOS4\n");
+    return 1;
+  }
+  #endif
   if (size > SIZE_MAX) {
     mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
     return -1;
   }
+
+  /* v145: IAmiSSL vor Cache-Start sichern */
+  #ifdef __amigaos4__
+  {
+    extern struct AmiSSLIFace *IAmiSSL;
+    extern struct AmiSSLIFace *main_IAmiSSL;
+    if (IAmiSSL != NULL) main_IAmiSSL = IAmiSSL;
+  }
+  #endif
 
   s=cache_init(size,ss);
   if(s == NULL) return -1;

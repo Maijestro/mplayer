@@ -168,7 +168,15 @@ static void ArexxTask (void)
 {
 	ULONG sigs;
 
+	Delay(25);
+
 	ArexxHandle *rxHandler = InitArexx();
+
+	if (!rxHandler)
+	{
+		Signal((struct Task*)MainTask, SIGF_CHILD);
+		return;
+	}
 
 	for(;;)
 	{
@@ -193,7 +201,6 @@ static void ArexxTask (void)
 
 void StartArexx(void)
 {
-//	APTR output = Open("CON:",MODE_NEWFILE);
 
 	MainTask = FindTask(NULL);
 
@@ -203,6 +210,7 @@ void StartArexx(void)
 //			NP_Output, output,
 			NP_Priority, 0,
 			NP_Child,    TRUE,
+			NP_Path,     GetProgramDir(),
 		TAG_END);
 DBUG("ARexx_Process=0x%08lx (START)\n",ARexx_Process);
 }
@@ -233,7 +241,7 @@ ArexxHandle* InitArexx(void)
 	// if ((ro = (ArexxHandle*)AllocVec(sizeof(ArexxHandle),MEMF_SHARED|MEMF_CLEAR)))
 	if( (ro = (ArexxHandle*)AllocVecTags(sizeof(ArexxHandle), AVT_Type,MEMF_PRIVATE, TAG_DONE)) )
 	{
-		if ((ro->ArexxBase = OpenLibrary("arexx.class",0)))
+		if ((ro->ArexxBase = OpenLibrary("arexx.class",0)) || (ro->ArexxBase = OpenLibrary("SYS:Classes/arexx.class",0)))
 		{
 			if ((ro->IARexx = (struct ARexxIFace*)GetInterface(ro->ArexxBase, "main", 1, NULL)))
 			{
@@ -241,7 +249,7 @@ ArexxHandle* InitArexx(void)
 				IARexx = ro->IARexx;
 //				if (IIntuition)
 //				{
-					ro->rxObject = NewObject(AREXX_GetClass(), NULL,
+				ro->rxObject = NewObject(AREXX_GetClass(), NULL,
 					//ro->rxObject = NewObject(NULL, "arexx.class",
 							 AREXX_HostName,  "MPLAYER",
 							 AREXX_NoSlot,    FALSE,
@@ -259,6 +267,7 @@ ArexxHandle* InitArexx(void)
 					GetAttr(AREXX_HostName, ro->rxObject, (uint32*)&ARexxPortName);
 
 					GetAttr(AREXX_SigMask,ro->rxObject,&(ro->sigmask));
+
 					return ro;
 				}
 				else
@@ -616,7 +625,8 @@ DBUG("RXID_%02ld\n",cmd->ac_ID);
 
 #include "../m_property.h"
 #include "../mp_core.h"
-extern MPContext *mpctx;
+extern MPContext *mpctx_global;
+#define mpctx mpctx_global
 int get_icommand(CONST_STRPTR cmd)
 {
 	int r;

@@ -1,0 +1,452 @@
+/*
+ * vo_vaapi.c
+ * VO module for MPlayer AmigaOS4
+ * Using VA-API (va.library) for hardware accelerated video output
+ */
+
+#define SYSTEM_PRIVATE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
+#include "config.h"
+#include "mp_msg.h"
+#include "video_out.h"
+#include "video_out_internal.h"
+#include "cgx_common.h"
+#include "version.h"
+#include "sub/osd.h"
+#include "sub/sub.h"
+#include "aspect.h"
+
+#include "../amigaos/debug.h"
+
+extern struct Catalog *catalog;
+#define MPlayer_NUMBERS
+#define MPlayer_STRINGS
+#include "../amigaos/MPlayer_catalog.h"
+extern STRPTR myGetCatalogStr(struct Catalog *catalog, LONG num, STRPTR def);
+#define CS(id) myGetCatalogStr(catalog,id,id##_STR)
+
+#define __USE_INLINE__
+
+#include <proto/intuition.h>
+#include <proto/graphics.h>
+#include <proto/exec.h>
+#include <proto/layers.h>
+#include <exec/types.h>
+
+/* VA-API - va.library */
+#include <proto/VA.h>
+
+extern APTR window_mx;
+
+static vo_info_t info =
+{
+    "VA-API hardware accelerated video output",
+    "vaapi",
+    "AmigaOS4 VA-API",
+    ""
+};
+
+LIBVO_EXTERN(vaapi)
+
+/* Private state */
+static struct {
+    /* VA-API */
+    VADisplay       va_display;
+    VAConfigID      va_config;
+    VAContextID     va_context;
+    VASurfaceID     va_surface;
+    VAImage         va_image;
+    int             va_image_valid;
+
+    /* Window */
+    struct Screen   *screen;
+    struct Window   *window;
+    struct BitMap   *back_buffer;
+
+    /* Video dimensions */
+    int             src_width;
+    int             src_height;
+    int             dst_width;
+    int             dst_height;
+
+    /* State */
+    int             initialized;
+    int             window_height;
+    int             window_width;
+    int             win_left;
+    int             win_top;
+} priv;
+
+static void uninit(void)
+{
+    if (priv.va_image_valid) {
+        vaDestroyImage(priv.va_display, priv.va_image.image_id);
+        priv.va_image_valid = 0;
+    }
+    if (priv.va_surface != VA_INVALID_SURFACE) {
+        vaDestroySurfaces(priv.va_display, &priv.va_surface, 1);
+        priv.va_surface = VA_INVALID_SURFACE;
+    }
+    if (priv.back_buffer) {
+        FreeBitMap(priv.back_buffer);
+        priv.back_buffer = NULL;
+    }
+    if (priv.window) {
+        CloseWindow(priv.window);
+        priv.window = NULL;
+    }
+    if (priv.screen) {
+        UnlockPubScreen(NULL, priv.screen);
+        priv.screen = NULL;
+    }
+    if (priv.va_display) {
+        vaTerminate(priv.va_display);
+        priv.va_display = NULL;
+    }
+    priv.initialized = 0;
+}
+
+static int preinit(const char *arg)
+{
+    memset(&priv, 0, sizeof(priv));
+    priv.va_surface = VA_INVALID_SURFACE;
+
+    /* Get VA display for primary graphics board */
+    priv.va_display = vaGetDisplay(0);
+    if (!priv.va_display) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] Cannot get VA display\n");
+        return -1;
+    }
+
+    int major, minor;
+    VAStatus status = vaInitialize(priv.va_display, &major, &minor);
+    if (status != VA_STATUS_SUCCESS) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaInitialize failed: %s\n",
+               vaErrorStr(status));
+        vaTerminate(priv.va_display);
+        priv.va_display = NULL;
+        return -1;
+    }
+
+    mp_msg(MSGT_VO, MSGL_INFO, "VO: [vaapi] VA-API %d.%d initialized: %s\n",
+           major, minor, vaQueryVendorString(priv.va_display));
+
+    return 0;
+}
+
+static int config(uint32_t width, uint32_t height, uint32_t d_width,
+                  uint32_t d_height, uint32_t flags, char *title,
+                  uint32_t format)
+{
+    VAStatus status;
+
+
+    priv.src_width  = width;
+    priv.src_height = height;
+    /* Sanity check on display dimensions */
+    priv.dst_width  = (d_width  > 0 && d_width  < 4096) ? d_width  : width;
+    priv.dst_height = (d_height > 0 && d_height < 4096) ? d_height : height;
+
+    /* Cleanup previous session */
+    if (priv.va_image_valid) {
+        vaDestroyImage(priv.va_display, priv.va_image.image_id);
+        priv.va_image_valid = 0;
+    }
+    if (priv.va_context) {
+        vaDestroyContext(priv.va_display, priv.va_context);
+        priv.va_context = 0;
+    }
+    if (priv.va_surface != VA_INVALID_SURFACE) {
+        vaDestroySurfaces(priv.va_display, &priv.va_surface, 1);
+        priv.va_surface = VA_INVALID_SURFACE;
+    }
+    if (priv.va_config) {
+        vaDestroyConfig(priv.va_display, priv.va_config);
+        priv.va_config = 0;
+    }
+
+    /* Check for VAEntrypointVideoProc support */
+    int num_entrypoints = vaMaxNumEntrypoints(priv.va_display);
+    VAEntrypoint *entrypoints = calloc(num_entrypoints, sizeof(VAEntrypoint));
+    int supports_vpp = 0, i;
+    vaQueryConfigEntrypoints(priv.va_display, VAProfileNone,
+                             entrypoints, &num_entrypoints);
+    for (i = 0; i < num_entrypoints; i++) {
+        if (entrypoints[i] == VAEntrypointVideoProc) {
+            supports_vpp = 1;
+            break;
+        }
+    }
+    free(entrypoints);
+
+    if (!supports_vpp) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] VAEntrypointVideoProc not supported\n");
+        return -1;
+    }
+
+    /* Create config for video processing */
+    VAConfigAttrib attrib;
+    attrib.type  = VAConfigAttribRTFormat;
+    attrib.value = VA_RT_FORMAT_YUV420;
+    status = vaCreateConfig(priv.va_display, VAProfileNone,
+                            VAEntrypointVideoProc, &attrib, 1, &priv.va_config);
+    if (status != VA_STATUS_SUCCESS) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaCreateConfig failed: %s\n",
+               vaErrorStr(status));
+        return -1;
+    }
+
+    /* Create surface */
+    status = vaCreateSurfaces(priv.va_display, VA_RT_FORMAT_YUV420,
+                              width, height, &priv.va_surface, 1, NULL, 0);
+    if (status != VA_STATUS_SUCCESS) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaCreateSurfaces failed: %s\n",
+               vaErrorStr(status));
+        return -1;
+    }
+
+    /* Create context */
+    status = vaCreateContext(priv.va_display, priv.va_config,
+                             width, height, VA_PROGRESSIVE,
+                             &priv.va_surface, 1, &priv.va_context);
+    if (status != VA_STATUS_SUCCESS) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaCreateContext failed: %s\n",
+               vaErrorStr(status));
+        return -1;
+    }
+    mp_msg(MSGT_VO, MSGL_INFO, "VO: [vaapi] Context created: 0x%x Surface: 0x%x\n",
+           (unsigned)priv.va_context, (unsigned)priv.va_surface);
+
+    /* Close old window/screen if any */
+    if (priv.back_buffer) { FreeBitMap(priv.back_buffer); priv.back_buffer = NULL; }
+    if (priv.window) { CloseWindow(priv.window); priv.window = NULL; }
+    if (priv.screen) { UnlockPubScreen(NULL, priv.screen); priv.screen = NULL; }
+
+    /* Open Workbench screen and window */
+    priv.screen = LockPubScreen(NULL);
+    if (!priv.screen) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] Cannot lock public screen\n");
+        return -1;
+    }
+
+    uint32_t win_left, win_top;
+    gfx_center_window(priv.screen, priv.dst_width, priv.dst_height, &win_left, &win_top);
+
+    priv.window = OpenWindowTags(NULL,
+        WA_PubScreen,     (ULONG)priv.screen,
+        WA_Left,          win_left,
+        WA_Top,           win_top,
+        WA_InnerWidth,    priv.dst_width,
+        WA_InnerHeight,   priv.dst_height,
+        WA_SimpleRefresh, TRUE,
+        WA_CloseGadget,   TRUE,
+        WA_DragBar,       TRUE,
+        WA_SizeGadget,    TRUE,
+        WA_NewLookMenus,  TRUE,
+        WA_Activate,      TRUE,
+        WA_BackFill,      LAYERS_NOBACKFILL,
+        WA_IDCMP,         IDCMP_COMMON | IDCMP_NEWSIZE,
+        WA_Flags,         WFLG_REPORTMOUSE,
+        TAG_DONE);
+
+    if (!priv.window) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] Cannot open window\n");
+        return -1;
+    }
+
+    priv.window_width  = priv.window->Width  - priv.window->BorderLeft - priv.window->BorderRight;
+    priv.window_height = priv.window->Height - priv.window->BorderTop  - priv.window->BorderBottom;
+    priv.initialized = 1;
+
+    mp_msg(MSGT_VO, MSGL_INFO, "VO: [vaapi] %dx%d => %dx%d\n",
+           width, height, priv.dst_width, priv.dst_height);
+    return 0;
+}
+
+static int draw_slice(uint8_t *image[], int stride[], int w, int h, int x, int y)
+{
+    VAStatus status;
+    void *buf = NULL;
+    VAImage derived_image;
+
+    /* Try vaDeriveImage first - direct access to surface memory */
+    status = vaDeriveImage(priv.va_display, priv.va_surface, &derived_image);
+    if (status == VA_STATUS_SUCCESS) {
+        status = vaMapBuffer(priv.va_display, derived_image.buf, &buf);
+        if (status != VA_STATUS_SUCCESS) {
+            vaDestroyImage(priv.va_display, derived_image.image_id);
+            return -1;
+        }
+
+        uint8_t *dst = (uint8_t *)buf;
+        int i;
+
+        /* Copy Y plane */
+        uint8_t *src_y = image[0] + y * stride[0] + x;
+        uint8_t *dst_y = dst + derived_image.offsets[0] + y * derived_image.pitches[0] + x;
+        for (i = 0; i < h; i++) {
+            memcpy(dst_y, src_y, w);
+            src_y += stride[0];
+            dst_y += derived_image.pitches[0];
+        }
+
+        /* Copy U plane */
+        uint8_t *src_u = image[1] + (y/2) * stride[1] + (x/2);
+        uint8_t *dst_u = dst + derived_image.offsets[1] + (y/2) * derived_image.pitches[1] + (x/2);
+        for (i = 0; i < h/2; i++) {
+            memcpy(dst_u, src_u, w/2);
+            src_u += stride[1];
+            dst_u += derived_image.pitches[1];
+        }
+
+        /* Copy V plane */
+        uint8_t *src_v = image[2] + (y/2) * stride[2] + (x/2);
+        uint8_t *dst_v = dst + derived_image.offsets[2] + (y/2) * derived_image.pitches[2] + (x/2);
+        for (i = 0; i < h/2; i++) {
+            memcpy(dst_v, src_v, w/2);
+            src_v += stride[2];
+            dst_v += derived_image.pitches[2];
+        }
+
+        vaUnmapBuffer(priv.va_display, derived_image.buf);
+        vaDestroyImage(priv.va_display, derived_image.image_id);
+        priv.va_image_valid = 1;
+        return 0;
+    }
+
+    /* Fallback: vaCreateImage + vaPutImage */
+    if (!priv.va_image_valid) {
+        VAImageFormat fmt;
+        int num_formats = vaMaxNumImageFormats(priv.va_display);
+        VAImageFormat *formats = calloc(num_formats, sizeof(VAImageFormat));
+        vaQueryImageFormats(priv.va_display, formats, &num_formats);
+
+        int i, found = 0;
+        for (i = 0; i < num_formats; i++) {
+            if (formats[i].fourcc == VA_FOURCC_YV12 ||
+                formats[i].fourcc == VA_FOURCC_NV12) {
+                fmt = formats[i];
+                found = 1;
+                break;
+            }
+        }
+        free(formats);
+
+        if (!found) {
+            mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] No YUV image format found\n");
+            return -1;
+        }
+
+        status = vaCreateImage(priv.va_display, &fmt,
+                               priv.src_width, priv.src_height, &priv.va_image);
+        if (status != VA_STATUS_SUCCESS) {
+            mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaCreateImage failed: %s\n",
+                   vaErrorStr(status));
+            return -1;
+        }
+        priv.va_image_valid = 1;
+    }
+
+    status = vaMapBuffer(priv.va_display, priv.va_image.buf, &buf);
+    if (status != VA_STATUS_SUCCESS) return -1;
+
+    uint8_t *dst = (uint8_t *)buf;
+    int i;
+
+    uint8_t *src_y = image[0] + y * stride[0] + x;
+    uint8_t *dst_y = dst + priv.va_image.offsets[0] + y * priv.va_image.pitches[0] + x;
+    for (i = 0; i < h; i++) {
+        memcpy(dst_y, src_y, w);
+        src_y += stride[0];
+        dst_y += priv.va_image.pitches[0];
+    }
+
+    uint8_t *src_u = image[1] + (y/2) * stride[1] + (x/2);
+    uint8_t *dst_u = dst + priv.va_image.offsets[1] + (y/2) * priv.va_image.pitches[1] + (x/2);
+    for (i = 0; i < h/2; i++) {
+        memcpy(dst_u, src_u, w/2);
+        src_u += stride[1];
+        dst_u += priv.va_image.pitches[1];
+    }
+
+    uint8_t *src_v = image[2] + (y/2) * stride[2] + (x/2);
+    uint8_t *dst_v = dst + priv.va_image.offsets[2] + (y/2) * priv.va_image.pitches[2] + (x/2);
+    for (i = 0; i < h/2; i++) {
+        memcpy(dst_v, src_v, w/2);
+        src_v += stride[2];
+        dst_v += priv.va_image.pitches[2];
+    }
+
+    vaUnmapBuffer(priv.va_display, priv.va_image.buf);
+    return 0;
+}
+
+static int draw_frame(uint8_t *src[])
+{
+    return 0;
+}
+
+static void flip_page(void)
+{
+    if (!priv.initialized || !priv.window) return;
+
+    /* Upload image to surface */
+    if (priv.va_image_valid) {
+        vaPutImage(priv.va_display, priv.va_surface, priv.va_image.image_id,
+                   0, 0, priv.src_width, priv.src_height,
+                   0, 0, priv.src_width, priv.src_height);
+        vaSyncSurface(priv.va_display, priv.va_surface);
+    }
+
+    /* Output directly to RastPort as per VAToRastPort example */
+    LockLayer(0, priv.window->WLayer);
+    VAStatus st = vaPutSurface(priv.va_display, priv.va_surface,
+                 VADT_RastPort, priv.window->RPort,
+                 0, 0, priv.src_width, priv.src_height,
+                 priv.window->BorderLeft, priv.window->BorderTop,
+                 priv.window_width, priv.window_height,
+                 VA_FRAME_PICTURE | VA_SRC_BT601 | VA_FILTER_SCALING_HQ);
+    UnlockLayer(priv.window->WLayer);
+    if (st != VA_STATUS_SUCCESS)
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] vaPutSurface failed: %s\n", vaErrorStr(st));
+}
+
+static void draw_osd(void)
+{
+}
+
+static void check_events(void)
+{
+    if (!priv.window) return;
+    gfx_CheckEvents(priv.screen, priv.window,
+                    &priv.window_height, &priv.window_width,
+                    &priv.win_left, &priv.win_top);
+}
+
+static int control(uint32_t request, void *data)
+{
+    switch (request) {
+    case VOCTRL_QUERY_FORMAT:
+        switch (*(uint32_t *)data) {
+        case IMGFMT_YV12:
+        case IMGFMT_I420:
+        case IMGFMT_IYUV:
+            return VFCAP_CSP_SUPPORTED | VFCAP_CSP_SUPPORTED_BY_HW |
+                   VFCAP_ACCEPT_STRIDE;
+        }
+        return 0;
+    case VOCTRL_FULLSCREEN:
+        /* TODO: implement fullscreen */
+        return VO_TRUE;
+    case VOCTRL_UPDATE_SCREENINFO:
+        vo_screenwidth  = priv.screen ? priv.screen->Width  : 1024;
+        vo_screenheight = priv.screen ? priv.screen->Height : 768;
+        return VO_TRUE;
+    }
+    return VO_NOTIMPL;
+}

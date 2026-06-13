@@ -36,7 +36,7 @@
           <td align=center><b>FFmpeg wrapper for libdav1d</b></td>
           <td align=center><b>AV01<br>av01</b></td>
           <td align=center><b>libdav1d</b></td>
-          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>444P<br>444P10LE<br>444P12<br>GBR24P<br>GBR10P<br>GBR12P</b></td>
+          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>444P<br>444P10BE<br>444P12<br>GBR24P<br>GBR10P<br>GBR12P</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -44,7 +44,7 @@
           <td align=center><b>FFmpeg wrapper for libaom/AV1</b></td>
           <td align=center><b>AV01<br>av01</b></td>
           <td align=center><b>libaom-av1</b></td>
-          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>444P<br>444P10LE<br>444P12</b></td>
+          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>444P<br>444P10BE<br>444P12</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -52,7 +52,7 @@
           <td align=center><b>FFmpeg IFF ANIM/ILBM/PBM/RGB8/RGBN</b></td>
           <td align=center><b>ANIM<br>ILBM<br>PBM <br>RGB8<br>RGBN</b></td>
           <td align=center><b>iff</b></td>
-          <td align=center><b>BGR8<br>BGR32<br>Y8<br>RGB32<br>BGR12</b></td>
+          <td align=center><b>BGR8<br>ARGB<br>Y8<br>RGBA<br>BGR12</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -140,7 +140,7 @@
           <td align=center><b>FFmpeg Motion Pixels</b></td>
           <td align=center><b>MVI1</b></td>
           <td align=center><b>motionpixels</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -204,7 +204,7 @@
           <td align=center><b>FFmpeg innoHeim/Rsupport Screen Capture Codec</b></td>
           <td align=center><b>RSCC<br>ISCC</b></td>
           <td align=center><b>rscc</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGRA<br>BGR24<br>BGR15LE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -212,7 +212,7 @@
           <td align=center><b>FFmpeg Zip Motion-Block Video</b></td>
           <td align=center><b>ZMBV</b></td>
           <td align=center><b>zmbv</b></td>
-          <td align=center><b>RGB24<br>BGR8<br>BGR15LE<br>BGR16<br>BGR32</b></td>
+          <td align=center><b>RGB24<br>BGR8<br>BGR15LE<br>BGR16<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -228,7 +228,7 @@
           <td align=center><b>GeoCodec h264</b></td>
           <td align=center><b>G264</b></td>
           <td align=center><b>GX264.dll</b></td>
-          <td align=center><b>RGB24<br>RGB32<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>RGB24<br>RGB32<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -244,7 +244,7 @@
           <td align=center><b>infinity cctv codec</b></td>
           <td align=center><b>IMM4</b></td>
           <td align=center><b>VCMIMM4.dll</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -252,7 +252,7 @@
           <td align=center><b>infinity cctv codec</b></td>
           <td align=center><b>IMM5</b></td>
           <td align=center><b>vcmimm5.dll</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -260,7 +260,7 @@
           <td align=center><b>infinity cctv codec</b></td>
           <td align=center><b>IMM6</b></td>
           <td align=center><b>vcmimm6.dll</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -268,7 +268,7 @@
           <td align=center><b>March Networks MPEG4</b></td>
           <td align=center><b>MNM4</b></td>
           <td align=center><b>mnmpeg4.dll</b></td>
-          <td align=center><b>RGB24<br>RGB32<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>RGB24<br>RGB32<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b>not standard mpeg4.</b></td>
         </tr>
 <!--  -->
@@ -276,7 +276,7 @@
           <td align=center><b>lossless video codec</b></td>
           <td align=center><b>AMV2</b></td>
           <td align=center><b>amv2codec.dll</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -292,7 +292,7 @@
           <td align=center><b>direccional lossless codec</b></td>
           <td align=center><b>DIRC</b></td>
           <td align=center><b>direccional.dll</b></td>
-          <td align=center><b>BGR24<br>BGR32</b></td>
+          <td align=center><b>BGR24<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -300,7 +300,7 @@
           <td align=center><b>mhuffyuv lossless codec</b></td>
           <td align=center><b>MHFY</b></td>
           <td align=center><b>mhuffyuv.dll</b></td>
-          <td align=center><b>BGR24<br>BGR32</b></td>
+          <td align=center><b>BGR24<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -308,7 +308,7 @@
           <td align=center><b>Zip Motion-Block Video</b></td>
           <td align=center><b>ZMBV</b></td>
           <td align=center><b>zmbv.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -316,7 +316,7 @@
           <td align=center><b>YUV422 = Cb0 Y0 Cr0 Y1 Cb1 Y2 Cr1 Y3 (U Y V Y U Y V Y)</b></td>
           <td align=center><b>yuv8<br>YUV8</b></td>
           <td align=center><b>kdvyuv8.dll</b></td>
-          <td align=center><b>YV12<br>I420<br>UYVY<br>BGR24<br>BGR15LE<br>BGR32</b></td>
+          <td align=center><b>YV12<br>I420<br>UYVY<br>BGR24<br>BGR15<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -340,7 +340,7 @@
           <td align=center><b>FFmpeg v410 - packed 4:4:4 10-bit</b></td>
           <td align=center><b>v410</b></td>
           <td align=center><b>v410</b></td>
-          <td align=center><b>444P10LE</b></td>
+          <td align=center><b>444P10BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -388,7 +388,7 @@
           <td align=center><b>FFmpeg Pinnacle Targa CineWave YUV16</b></td>
           <td align=center><b>Y216</b></td>
           <td align=center><b>targa_y216</b></td>
-          <td align=center><b>422P16LE</b></td>
+          <td align=center><b>422P16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -404,7 +404,7 @@
           <td align=center><b>FFmpeg 012v Uncompressed 4:2:2</b></td>
           <td align=center><b>012v<br>a12v</b></td>
           <td align=center><b>012v</b></td>
-          <td align=center><b>422P16LE</b></td>
+          <td align=center><b>422P16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -412,7 +412,7 @@
           <td align=center><b>Blackmagic 10-bit</b></td>
           <td align=center><b>r210</b></td>
           <td align=center><b>BMDCodecLib.dll</b></td>
-          <td align=center><b>BGR32<br>RGB32</b></td>
+          <td align=center><b>ARGB<br>RGB32</b></td>
           <td align=center colspan=2><b>requires libguide40.dll</b></td>
         </tr>
 <!--  -->
@@ -420,7 +420,7 @@
           <td align=center><b>ffmpeg sheervideo</b></td>
           <td align=center><b>Shr0<br>Shr1<br>Shr2<br>Shr3<br>Shr4<br>Shr5<br>Shr6<br>Shr7</b></td>
           <td align=center><b>sheervideo</b></td>
-          <td align=center><b>444P<br>422P<br>444A<br>422A<br>RGB32<br>ARGB<br>BGR24<br>BGR16<br>YUY2<br>422P10<br>444P10LE</b></td>
+          <td align=center><b>444P<br>422P<br>444A<br>422A<br>RGBA<br>ARGB<br>BGR24<br>BGR16<br>YUY2<br>422P10<br>444P10BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -428,7 +428,7 @@
           <td align=center><b>FFmpeg MPEG-1</b></td>
           <td align=center><b>-<br>mpg1<br>PIM1<br>VCR2<br>MPEG<br>m1v1<br>m1v <br>BW10</b></td>
           <td align=center><b>mpeg1video</b></td>
-          <td align=center><b>YV12<br>I420<br>IYUV<br>IDCT_MPEG2<br>MOCO_MPEG2</b></td>
+          <td align=center><b>YV12<br>I420<br>IYUV</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -436,7 +436,7 @@
           <td align=center><b>FFmpeg MPEG-2</b></td>
           <td align=center><b>-<br>mpg2<br>MPG2<br>DVR <br>MPEG<br>mx5p<br>MMES<br>mmes<br>M701<br>M702<br>m702<br>M703<br>M704<br>m704<br>M705<br>hdv1<br>hdv2<br>hdv3<br>hdv4<br>hdv5<br>hdv6<br>hdv7<br>hdv8<br>hdv9<br>hdva<br>xdhd<br>xdh2<br>xdv1<br>xdv2<br>xdv3<br>xdv4<br>xdv5<br>xdv6<br>xdv7<br>xdv8<br>xdv9<br>xdva<br>xdvb<br>xdvc<br>xdvd<br>xdve<br>xdvf<br>xd5a<br>xd5b<br>xd5c<br>xd5d<br>xd5e<br>xd5f<br>xd59<br>xd54<br>xd55<br>xd51<br>mx5n<br>mx4n<br>mx4p<br>mx3n<br>mx3p<br>AVmp<br>VCR2<br>mp2v<br>mpgv<br>m2v1<br>PIM2<br>LMP2<br>slif</b></td>
           <td align=center><b>mpeg2video</b></td>
-          <td align=center><b>YV12<br>I420<br>IYUV<br>422P<br>444P<br>IDCT_MPEG2<br>MOCO_MPEG2</b></td>
+          <td align=center><b>YV12<br>I420<br>IYUV<br>422P<br>444P<br>VAAPI_MPEG2</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -444,7 +444,7 @@
           <td align=center><b>FFmpeg MPEG-1/2</b></td>
           <td align=center><b>-<br><br>mpg1<br>mpg2<br>MPG2<br>PIM1<br>PIM2<br>VCR2<br>DVR <br>MPEG<br>mx5p<br>MMES<br>mmes<br>M701<br>M702<br>m702<br>M703<br>M704<br>m704<br>M705<br>hdv1<br>hdv2<br>hdv3<br>hdv4<br>hdv5<br>hdv6<br>hdv7<br>hdv8<br>hdv9<br>hdva<br>xdhd<br>xdh2<br>xdv1<br>xdv2<br>xdv3<br>xdv4<br>xdv5<br>xdv6<br>xdv7<br>xdv8<br>xdv9<br>xdva<br>xdvb<br>xdvc<br>xdvd<br>xdve<br>xdvf<br>xd5a<br>xd5b<br>xd5c<br>xd5d<br>xd5e<br>xd5f<br>xd59<br>xd54<br>xd55<br>xd51<br>mx5n<br>mx4n<br>mx4p<br>mx3n<br>mx3p<br>AVmp<br>mp2v<br>mpgv<br>m2v1<br>m1v1<br>m1v <br>LMP2<br>slif<br>EM2V</b></td>
           <td align=center><b>mpegvideo</b></td>
-          <td align=center><b>YV12<br>I420<br>IYUV<br>422P<br>444P<br>IDCT_MPEG2<br>MOCO_MPEG2</b></td>
+          <td align=center><b>YV12<br>I420<br>IYUV<br>422P<br>444P</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -500,7 +500,7 @@
           <td align=center><b>FFmpeg BMP</b></td>
           <td align=center><b>bmp <br></b></td>
           <td align=center><b>bmp</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8<br>Y800<br>RGB32<br>RGB24<br>RGB8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8<br>Y800<br>RGB32<br>RGB24<br>RGB8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -508,7 +508,7 @@
           <td align=center><b>FFmpeg DPX</b></td>
           <td align=center><b>dpx </b></td>
           <td align=center><b>dpx</b></td>
-          <td align=center><b>RGB64BE<br>RGB64LE<br>RGB48BE<br>RGB48LE<br>RGB24<br>RGB32</b></td>
+          <td align=center><b>RGB64BE<br>RGB64LE<br>RGB48BE<br>RGB48LE<br>RGB24<br>RGBA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -516,7 +516,7 @@
           <td align=center><b>FFmpeg GIF</b></td>
           <td align=center><b>gif </b></td>
           <td align=center><b>gif</b></td>
-          <td align=center><b>BGR8<br>BGR32</b></td>
+          <td align=center><b>BGR8<br>BGRA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -524,7 +524,7 @@
           <td align=center><b>FFmpeg TIFF</b></td>
           <td align=center><b>tiff</b></td>
           <td align=center><b>tiff</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8<br>Y800<br>RGB64LE<br>RGB64BE<br>RGB48LE<br>RGB48BE<br>RGB32<br>RGB24<br>RGB8<br>Y8A<br>Y16LE<br>Y16BE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8<br>Y800<br>RGB64LE<br>RGB64BE<br>RGB48LE<br>RGB48BE<br>RGB32<br>RGB24<br>RGB8<br>Y8A<br>Y16LE<br>Y16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -540,7 +540,7 @@
           <td align=center><b>FFmpeg PNG</b></td>
           <td align=center><b>mpng<br>MPNG<br>MNG <br>png </b></td>
           <td align=center><b>png</b></td>
-          <td align=center><b>BGR32<br>BGR8<br>Y800<br>RGB64BE<br>RGB48BE<br>RGB32<br>RGB24<br>Y8A<br>Y16BE</b></td>
+          <td align=center><b>ARGB<br>BGR8<br>Y800<br>RGB64BE<br>RGB48BE<br>RGBA<br>RGB24<br>Y8A<br>Y16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -548,7 +548,7 @@
           <td align=center><b>PNG image</b></td>
           <td align=center><b>mpng<br>MPNG<br>png </b></td>
           <td align=center><b>libpng</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8<br>Y800</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8<br>Y800</b></td>
           <td align=center colspan=2><b>Gray scaled PNG with Alpha channel not supported</b></td>
         </tr>
 <!--  -->
@@ -556,7 +556,7 @@
           <td align=center><b>FFmpeg APNG</b></td>
           <td align=center><b>apng<br>APNG</b></td>
           <td align=center><b>apng</b></td>
-          <td align=center><b>BGR32<br>BGR8<br>Y800<br>RGB64BE<br>RGB48BE<br>RGB32<br>RGB24<br>BGR8<br>Y8A<br>Y16BE</b></td>
+          <td align=center><b>ARGB<br>BGR8<br>Y800<br>RGB64BE<br>RGB48BE<br>RGBA<br>RGB24<br>BGR8<br>Y8A<br>Y16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -564,7 +564,7 @@
           <td align=center><b>FFmpeg V.Flash PTX</b></td>
           <td align=center><b>ptx </b></td>
           <td align=center><b>ptx</b></td>
-          <td align=center><b>BGR15LE<br>BGR15LE</b></td>
+          <td align=center><b>BGR15LE<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -572,7 +572,7 @@
           <td align=center><b>TGA image</b></td>
           <td align=center><b>mtga<br>MTGA</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>BGR32<br>BGR24</b></td>
+          <td align=center><b>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b>Only 24bpp and 32bpp RGB TGA files supported</b></td>
         </tr>
 <!--  -->
@@ -580,7 +580,7 @@
           <td align=center><b>FFmpeg SGI image</b></td>
           <td align=center><b>SGI1</b></td>
           <td align=center><b>sgi</b></td>
-          <td align=center><b>RGB24<br>Y800<br>RGB64BE<br>RGB48BE<br>RGB32</b></td>
+          <td align=center><b>RGB24<br>Y800<br>RGB64BE<br>RGB48BE<br>RGBA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -604,7 +604,7 @@
           <td align=center><b>FFmpeg SGI Motion Video Compressor 1</b></td>
           <td align=center><b>mvc1</b></td>
           <td align=center><b>mvc1</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -612,7 +612,7 @@
           <td align=center><b>FFmpeg SGI Motion Video Compressor 2</b></td>
           <td align=center><b>mvc2</b></td>
           <td align=center><b>mvc2</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>BGRA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -620,7 +620,7 @@
           <td align=center><b>FFmpeg SUN Rasterfile</b></td>
           <td align=center><b>sun </b></td>
           <td align=center><b>sunrast</b></td>
-          <td align=center><b>BGR24<br>BGR8<br>Y800<br>RGB24<br>RGB32<br>BGR32</b></td>
+          <td align=center><b>BGR24<br>BGR8<br>Y800<br>RGB24<br>RGBA<br>BGRA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -644,7 +644,7 @@
           <td align=center><b>Autodesk FLI/FLC Animation</b></td>
           <td align=center><b>FLIC<br>flic<br>AFLC</b></td>
           <td align=center><b>flic</b></td>
-          <td align=center><b>BGR16<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>BGR16<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -652,7 +652,7 @@
           <td align=center><b>Autodesk RLE</b></td>
           <td align=center><b>AASC<br>AAS4</b></td>
           <td align=center><b>aasc</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -660,7 +660,7 @@
           <td align=center><b>LOCO video</b></td>
           <td align=center><b>LOCO</b></td>
           <td align=center><b>loco</b></td>
-          <td align=center><b>422P<br>YV12<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>422P<br>YV12<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -668,7 +668,7 @@
           <td align=center><b>QuickTime Animation (RLE)</b></td>
           <td align=center><b>rle </b></td>
           <td align=center><b>qtrle</b></td>
-          <td align=center><b>BGR32<br>RGB24<br>BGR15LE<br>BGR8<br>RGB1</b></td>
+          <td align=center><b>ARGB<br>RGB24<br>BGR15<br>BGR8<br>RGB1</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -676,7 +676,7 @@
           <td align=center><b>QuickTime Apple Video</b></td>
           <td align=center><b>rpza<br>azpr<br>RPZA<br>AZPR</b></td>
           <td align=center><b>rpza</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -692,7 +692,7 @@
           <td align=center><b>Planar RGB (Photoshop)</b></td>
           <td align=center><b>8BPS</b></td>
           <td align=center><b>8bps</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -788,7 +788,7 @@
           <td align=center><b>MSU Screen Capture Lossless Codec</b></td>
           <td align=center><b>SCLS</b></td>
           <td align=center><b>SCLS.DLL</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -796,7 +796,7 @@
           <td align=center><b>wincam screen capture codec</b></td>
           <td align=center><b>WCMV</b></td>
           <td align=center><b>wcmv.dll</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b>requires Zlib.dll</b></td>
         </tr>
 <!--  -->
@@ -812,7 +812,7 @@
           <td align=center><b>Cinepak Video</b></td>
           <td align=center><b>cvid</b></td>
           <td align=center><b>iccvid.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -820,7 +820,7 @@
           <td align=center><b>FFmpeg Microsoft Video 1</b></td>
           <td align=center><b>cram<br>CRAM<br>msvc<br>MSVC<br>wham<br>WHAM</b></td>
           <td align=center><b>msvideo1</b></td>
-          <td align=center><b>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -844,7 +844,7 @@
           <td align=center><b>FFmpeg HuffYUV</b></td>
           <td align=center><b>HFYU<br>FFVH</b></td>
           <td align=center><b>huffyuv</b></td>
-          <td align=center><b>YV12<br>422P<br>444P<br>411P<br>YVU9<br>440P<br>GBR24P<br>GBR12P<br>GBR14P<br>Y800<br>Y16LE<br>Y8A<br>420A<br>422A<br>444A<br>420P9<br>420P10<br>420P12<br>420P14<br>420P16LE<br>422P9<br>422P10<br>422P12<br>422P14<br>422P16LE<br>444P9<br>444P10LE<br>444P12<br>444P14<br>444P16LE<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YV12<br>422P<br>444P<br>411P<br>YVU9<br>440P<br>GBR24P<br>GBR12P<br>GBR14P<br>Y800<br>Y16BE<br>Y8A<br>420A<br>422A<br>444A<br>420P9<br>420P10<br>420P12<br>420P14<br>420P16BE<br>422P9<br>422P10<br>422P12<br>422P14<br>422P16BE<br>444P9<br>444P10BE<br>444P12<br>444P14<br>444P16BE<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -852,7 +852,7 @@
           <td align=center><b>FFV1 (lossless codec)</b></td>
           <td align=center><b>FFV1</b></td>
           <td align=center><b>ffv1</b></td>
-          <td align=center><b>411P<br>444P<br>422P<br>YV12<br>I420<br>IYUV<br>YVU9<br>420P9<br>420P10<br>422P10<br>422P16LE<br>444P16LE<br>420P16LE<br>BGR32</b></td>
+          <td align=center><b>411P<br>444P<br>422P<br>YV12<br>I420<br>IYUV<br>YVU9<br>420P9<br>420P10<br>422P10<br>422P16BE<br>444P16BE<br>420P16BE<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -908,7 +908,7 @@
           <td align=center><b>FFmpeg 4XM video</b></td>
           <td align=center><b>4XMV</b></td>
           <td align=center><b>4xm</b></td>
-          <td align=center><b>BGR15LE<br>BGR16</b></td>
+          <td align=center><b>BGR15<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1020,7 +1020,7 @@
           <td align=center><b>FFmpeg MS Screen 2</b></td>
           <td align=center><b>MSS2</b></td>
           <td align=center><b>mss2</b></td>
-          <td align=center><b>BGR15LE<br>RGB24</b></td>
+          <td align=center><b>BGR15<br>RGB24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1036,7 +1036,7 @@
           <td align=center><b>FFmpeg HEVC / H.265</b></td>
           <td align=center><b>HEVC<br>hvc1<br>hev1</b></td>
           <td align=center><b>hevc</b></td>
-          <td align=center><b>YV12<br>420P9<br>420P10<br>420P12<br>422P<br>422P9<br>422P10<br>444P12<br>444P<br>444P9<br>444P10LE<br>444P12<br>GBR24P<br>GBR10P<br>GBR12P</b></td>
+          <td align=center><b>YV12<br>420P9<br>420P10<br>420P12<br>422P<br>422P9<br>422P10<br>444P12<br>444P<br>444P9<br>444P10BE<br>444P12<br>GBR24P<br>GBR10P<br>GBR12P<br>VAAPI_HEVC</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1052,7 +1052,7 @@
           <td align=center><b>FFmpeg H.264</b></td>
           <td align=center><b>H264<br>h264<br>X264<br>x264<br>avc1<br>AVC1<br>davc<br>DAVC<br>vvvc<br>ai1p<br>ai1q<br>ai12<br>ai13<br>ai15<br>ai16<br>ai5p<br>ai5q<br>ai52<br>ai53<br>ai55<br>ai56<br>aivx<br>x3eV<br>Q264<br>V264<br>GAVC<br>UMSV<br>rv64<br></b></td>
           <td align=center><b>h264</b></td>
-          <td align=center><b>YV12<br>420P9<br>420P10<br>420P12<br>420P14<br>422P<br>422P9<br>422P10<br>444P12<br>444P14<br>444P<br>444P9<br>444P10LE<br>444P12<br>444P14<br>GBR24P<br>GBR12P<br>GBR14P</b></td>
+          <td align=center><b>YV12<br>420P9<br>420P10<br>420P12<br>420P14<br>422P<br>422P9<br>422P10<br>444P12<br>444P14<br>444P<br>444P9<br>444P10BE<br>444P12<br>444P14<br>GBR24P<br>GBR12P<br>GBR14P<br>VAAPI_H264</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1100,7 +1100,7 @@
           <td align=center><b>FFmpeg MPEG-4</b></td>
           <td align=center><b>FMP4<br>fmp4<br>DIVX<br>divx<br>DIV1<br>div1<br>MP4S<br>mp4s<br>M4S2<br>m4s2<br>xvid<br>XVID<br>XviD<br>XVIX<br>DX50<br>dx50<br>BLZ0<br>mp4v<br>MP4V<br><br>UMP4<br>RMP4<br>ZMP4<br>3IV2<br>3iv2<br>DXGM<br>SEDG<br>SMP4<br>smp4<br>VIDM<br><br>m4cc<br>M4CC<br>hdx4<br>HDX4<br>FVFW<br>fvfw<br>FFDS<br>DCOD<br>MVXM<br>EM4A<br>PM4V<br>M4T3<br>DMK2<br>DIGI<br>INMC<br>EPHV<br>SN40<br>WAWV<br>uldx<br>ULDX<br>VSPX<br>SIPP<br>DreX<br>DM4V<br>LMP4<br>DP02<br>QMP4<br>HV60<br>PLV1<br>SM4V<br>DYM4</b></td>
           <td align=center><b>mpeg4</b></td>
-          <td align=center><b>YV12<br>I420<br>IYUV</b></td>
+          <td align=center><b>YV12<br>I420<br>IYUV<br>VAAPI_MPEG4</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1156,7 +1156,7 @@
           <td align=center><b>Xvid (MPEG-4)</b></td>
           <td align=center><b>FMP4<br>fmp4<br>DIVX<br>divx<br>xvid<br>XVID<br>XviD<br>XVIX<br>DIV1<br>div1<br>MP4S<br>mp4s<br>M4S2<br>m4s2<br>DX50<br>dx50<br>BLZ0<br>mp4v<br>MP4V<br><br>UMP4<br>RMP4<br>3IV2<br>3iv2<br>DXGM<br>SEDG<br>SMP4<br>smp4<br>VIDM<br>FFDS<br>DCOD<br>MVXM<br>EM4A<br>PM4V<br>M4T3<br>DMK2<br>DIGI<br>INMC<br>EPHV<br>SN40<br>WAWV<br>uldx<br>ULDX<br>VSPX<br><br>SIPP<br>DreX<br>DM4V<br>LMP4<br>DP02<br>QMP4</b></td>
           <td align=center><b>libxvidcore.a</b></td>
-          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>YVYU<br>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>YVYU<br>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1164,7 +1164,7 @@
           <td align=center><b>DivX ;-) (MSMPEG-4 v3)</b></td>
           <td align=center><b>MP43<br>mp43<br>DIV5<br>div5<br>DIV6<br>div6<br>DIV3<br>div3<br>DIV4<br>div4<br>AP41</b></td>
           <td align=center><b>divx_c32.ax</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b>with postprocessing</b></td>
         </tr>
 <!--  -->
@@ -1172,7 +1172,7 @@
           <td align=center><b>DivX ;-) (MSMPEG-4 v3)</b></td>
           <td align=center><b>MP43<br>mp43<br>DIV5<br>div5<br>DIV6<br>div6<br>DIV3<br>div3<br>DIV4<br>div4<br>AP41</b></td>
           <td align=center><b>divxc32.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1188,7 +1188,7 @@
           <td align=center><b>Microsoft MPEG-4 v1/v2</b></td>
           <td align=center><b>MPG4<br>mpg4<br>MP42<br>mp42<br>DIV2</b></td>
           <td align=center><b>mpg4c32.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1244,7 +1244,7 @@
           <td align=center><b>Windows Media Screen Codec 2</b></td>
           <td align=center><b>MSS1<br>MSS2</b></td>
           <td align=center><b>wmsdmod.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1252,7 +1252,7 @@
           <td align=center><b>Windows Media Screen Codec 2 from WMP10</b></td>
           <td align=center><b>MSS1<br>MSS2</b></td>
           <td align=center><b>wms10dmod.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1276,7 +1276,7 @@
           <td align=center><b>expression encoder</b></td>
           <td align=center><b>MTS2</b></td>
           <td align=center><b>Microsoft.Expression.Encoder.EEScreen.Codec.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b>requires xp or newer and msvcr100.dll</b></td>
         </tr>
 <!--  -->
@@ -1308,7 +1308,7 @@
           <td align=center><b>GeoCodec h264 AVC</b></td>
           <td align=center><b>GAVC</b></td>
           <td align=center><b>GXAVC.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24</b></td>
+          <td align=center><b>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1324,7 +1324,7 @@
           <td align=center><b>FUJIAN HTC MPEG-4 CODEC</b></td>
           <td align=center><b>FJHT</b></td>
           <td align=center><b>fjht264.dll</b></td>
-          <td align=center><b>BGR15LE<br>BGR16<br>BGR24<br>BGR32<br>RGB16<br>RGB24<br>RGB32</b></td>
+          <td align=center><b>BGR15<br>BGR16<br>BGR24<br>ARGB<br>RGB16<br>RGB24<br>RGB32</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1364,7 +1364,7 @@
           <td align=center><b>Morgan Motion JPEG Codec</b></td>
           <td align=center><b>MJPG<br>mjpa<br>mjpb<br>mjpg<br>dmb1</b></td>
           <td align=center><b>m3jpeg32.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1372,7 +1372,7 @@
           <td align=center><b>Morgan TVMJ LSI M-JPEG Codec</b></td>
           <td align=center><b>TVMJ<br>FLJP</b></td>
           <td align=center><b>mmtvmj.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1380,7 +1380,7 @@
           <td align=center><b>MainConcept Motion JPEG</b></td>
           <td align=center><b>MJPG<br>mjpa<br>mjpb<br>mjpg</b></td>
           <td align=center><b>mcmjpg32.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1396,7 +1396,7 @@
           <td align=center><b>LEAD (M)JPEG</b></td>
           <td align=center><b>MJPG<br>jpeg<br>LEAD<br>MTSJ</b></td>
           <td align=center><b>LCodcCMP.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b>supports interlaced MJPEG</b></td>
         </tr>
 <!--  -->
@@ -1404,7 +1404,7 @@
           <td align=center><b>ACDSee mjpeg</b></td>
           <td align=center><b>ACDV</b></td>
           <td align=center><b>ACDV.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1412,7 +1412,7 @@
           <td align=center><b>OpenJPEG MJPEG2000</b></td>
           <td align=center><b>MJ2C<br>MJP2<br>mjp2</b></td>
           <td align=center><b>libopenjpeg</b></td>
-          <td align=center><b>XYZ12<br>RGB64LE<br>RGB64BE<br>RGB48LE<br>RGB48BE<br>RGB24<br>RGB32<br>BGR32<br>Y8<br>Y800<br>Y8A<br>Y16LE<br>YV12<br>422P<br>420P16LE<br>420P14<br>420P12<br>420P10<br>420P9<br>422P16LE<br>422P14<br>422P12<br>422P10<br>422P9<br>444P16LE<br>444P14<br>444P12<br>444P10LE<br>444P9<br>420A<br>422A<br>444A</b></td>
+          <td align=center><b>XYZ12<br>RGB64LE<br>RGB64BE<br>RGB48LE<br>RGB48BE<br>RGB24<br>RGB32<br>ARGB<br>Y8<br>Y800<br>Y8A<br>Y16BE<br>YV12<br>422P<br>420P16BE<br>420P14<br>420P12<br>420P10<br>420P9<br>422P16BE<br>422P14<br>422P12<br>422P10<br>422P9<br>444P16BE<br>444P14<br>444P12<br>444P10BE<br>444P9<br>420A<br>422A<br>444A</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1420,7 +1420,7 @@
           <td align=center><b>FFmpeg JPEG 2000 digital cinema</b></td>
           <td align=center><b>MJ2C<br>MJP2<br>mjp2</b></td>
           <td align=center><b>jpeg2000</b></td>
-          <td align=center><b>XYZ12<br>Y800<br>Y16LE<br>RGB48LE<br>RGB48BE<br>RGB32<br>BGR32<br>RGB24</b></td>
+          <td align=center><b>XYZ12<br>Y800<br>Y16BE<br>RGB48LE<br>RGB48BE<br>RGB32<br>ARGB<br>RGB24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1436,7 +1436,7 @@
           <td align=center><b>Morgan MJPEG2000</b></td>
           <td align=center><b>MJ2C<br>MJP2</b></td>
           <td align=center><b>m3jp2k32.dll</b></td>
-          <td align=center><b>YV12<br>I420<br>IYUV<br>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YV12<br>I420<br>IYUV<br>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1476,7 +1476,7 @@
           <td align=center><b>Vivo H.263</b></td>
           <td align=center><b>VIVO<br>vivo<br>viv1<br>viv2</b></td>
           <td align=center><b>ivvideo.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1492,7 +1492,7 @@
           <td align=center><b>I263</b></td>
           <td align=center><b>I263<br>i263<br>vivo<br>VIVO<br>viv1</b></td>
           <td align=center><b>i263_32.drv</b></td>
-          <td align=center><b>I420<br>YUY2<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>I420<br>YUY2<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1532,7 +1532,7 @@
           <td align=center><b>Intel Indeo 5</b></td>
           <td align=center><b>IV50<br>iv50</b></td>
           <td align=center><b>ir50_32.dll</b></td>
-          <td align=center><b>YV12<br>IYUV<br>I420<br>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YV12<br>IYUV<br>I420<br>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1540,7 +1540,7 @@
           <td align=center><b>Intel Indeo 5</b></td>
           <td align=center><b>IV50<br>iv50</b></td>
           <td align=center><b>ir50_32.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1548,7 +1548,7 @@
           <td align=center><b>Intel Indeo 4.1</b></td>
           <td align=center><b>IV41<br>iv41</b></td>
           <td align=center><b>ir41_32.dll</b></td>
-          <td align=center><b>IF09<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>IF09<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1556,7 +1556,7 @@
           <td align=center><b>Intel Indeo 3.1/3.2</b></td>
           <td align=center><b>IV31<br>iv31<br>IV32<br>iv32</b></td>
           <td align=center><b>ir32_32.dll</b></td>
-          <td align=center><b>IF09<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>IF09<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1612,7 +1612,7 @@
           <td align=center><b>Sony Digital Video (DV)</b></td>
           <td align=center><b>dvsl<br>dvsd<br>dvhd<br>DVSD<br>dvcp<br>dvc </b></td>
           <td align=center><b>qdv.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1628,7 +1628,7 @@
           <td align=center><b>MainConcept DV Codec</b></td>
           <td align=center><b>DVSD<br>dvsd<br>DVCS<br>dvcs<br>CDVC<br>cdvc<br>dvcp<br>dvc </b></td>
           <td align=center><b>mcdvd_32.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1644,7 +1644,7 @@
           <td align=center><b>3ivx Delta 4.5</b></td>
           <td align=center><b>3IV1</b></td>
           <td align=center><b>3ivxDSDecoder.ax</b></td>
-          <td align=center><b>YV12<br>YUY2<br>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YV12<br>YUY2<br>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1772,7 +1772,7 @@
           <td align=center><b>Lagarith Lossless Video Codec</b></td>
           <td align=center><b>LAGS</b></td>
           <td align=center><b>lagarith.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24</b></td>
+          <td align=center><b>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b>requires an MMX2 CPU.</b></td>
         </tr>
 <!--  -->
@@ -1788,7 +1788,7 @@
           <td align=center><b>UTVideo Codec</b></td>
           <td align=center><b>ULRA<br>ULRG<br>ULY2<br>ULY0<br>ULH2<br>ULH0<br>UQY2</b></td>
           <td align=center><b>utv_vcm.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>RGB32<br>RGB24<br>YV12<br>UYVY<br>YUY2</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>RGB32<br>RGB24<br>YV12<br>UYVY<br>YUY2</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1812,7 +1812,7 @@
           <td align=center><b>FFmpeg Screenpresso</b></td>
           <td align=center><b>SPV1</b></td>
           <td align=center><b>screenpresso</b></td>
-          <td align=center><b>BGR24<br>BGR32<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGRA<br>BGR15LE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1820,7 +1820,7 @@
           <td align=center><b>FFmpeg Hap</b></td>
           <td align=center><b>Hap1<br>Hap5<br>HapY</b></td>
           <td align=center><b>hap</b></td>
-          <td align=center><b>RGB32</b></td>
+          <td align=center><b>RGBA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1828,7 +1828,7 @@
           <td align=center><b>FFmpeg DXV</b></td>
           <td align=center><b>DXDI<br>DXD3</b></td>
           <td align=center><b>dxv</b></td>
-          <td align=center><b>RGB32</b></td>
+          <td align=center><b>RGBA</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1844,7 +1844,7 @@
           <td align=center><b>Infinite Video PSI_V</b></td>
           <td align=center><b>PSIV</b></td>
           <td align=center><b>psiv.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24</b></td>
+          <td align=center><b>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1892,7 +1892,7 @@
           <td align=center><b>DideoNET SMV2</b></td>
           <td align=center><b>SMV2</b></td>
           <td align=center><b>smv2vfw.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8<br>RGB32<br>RGB24<br>RGB8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8<br>RGB32<br>RGB24<br>RGB8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1900,7 +1900,7 @@
           <td align=center><b>CineForm HD</b></td>
           <td align=center><b>CFHD</b></td>
           <td align=center><b>cinevfw.dll</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b>windows only</b></td>
         </tr>
 <!--  -->
@@ -1932,7 +1932,7 @@
           <td align=center><b>FFmpeg Canopus HQX Codec</b></td>
           <td align=center><b>CHQX</b></td>
           <td align=center><b>hqx</b></td>
-          <td align=center><b>422P16LE<br>444P16LE</b></td>
+          <td align=center><b>422P16BE<br>444P16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -1956,7 +1956,7 @@
           <td align=center><b>On2 Open Source VP3 Codec</b></td>
           <td align=center><b>VP30<br>vp30<br>VP31<br>vp31</b></td>
           <td align=center><b>vp31vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b>For SSE-systems use fixed DLL from ftp://mplayerhq.hu/MPlayer/samples/drivers32/</b></td>
         </tr>
 <!--  -->
@@ -1964,7 +1964,7 @@
           <td align=center><b>On2 VP4 Personal Codec</b></td>
           <td align=center><b>VP40<br>VP31<br>VP30<br>vp31<br>vp30</b></td>
           <td align=center><b>vp4vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b>Decodes also VP3</b></td>
         </tr>
 <!--  -->
@@ -1980,7 +1980,7 @@
           <td align=center><b>On2 VP5 Personal Codec</b></td>
           <td align=center><b>VP50</b></td>
           <td align=center><b>vp5vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2004,7 +2004,7 @@
           <td align=center><b>On2 VP6 Personal Codec</b></td>
           <td align=center><b>VP60<br>VP61<br>VP62</b></td>
           <td align=center><b>vp6vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2012,7 +2012,7 @@
           <td align=center><b>On2 VP6F Personal Codec</b></td>
           <td align=center><b>VP6F</b></td>
           <td align=center><b>vp6vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2028,7 +2028,7 @@
           <td align=center><b>On2 VP7 Personal Codec</b></td>
           <td align=center><b>VP70</b></td>
           <td align=center><b>vp7vfw.dll</b></td>
-          <td align=center><b>YUY2<br>BGR32<br>BGR24</b></td>
+          <td align=center><b>YUY2<br>ARGB<br>BGR24</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2044,7 +2044,7 @@
           <td align=center><b>FFmpeg VP9</b></td>
           <td align=center><b>VP90</b></td>
           <td align=center><b>vp9</b></td>
-          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>440P<br>440P10<br>440P12<br>444P<br>444P10LE<br>444P12<br>GBR10P<br>GBR12P<br>GBR24P</b></td>
+          <td align=center><b>YV12<br>420P10<br>420P12<br>422P<br>422P10<br>422P12<br>440P<br>440P10<br>440P12<br>444P<br>444P10BE<br>444P12<br>GBR10P<br>GBR12P<br>GBR24P</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2068,7 +2068,7 @@
           <td align=center><b>Motion Wavelets</b></td>
           <td align=center><b>MWV1</b></td>
           <td align=center><b>icmw_32.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2084,7 +2084,7 @@
           <td align=center><b>ASUS V2</b></td>
           <td align=center><b>ASV2</b></td>
           <td align=center><b>asusasv2.dll</b></td>
-          <td align=center><b>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2092,7 +2092,7 @@
           <td align=center><b>ASUS V1</b></td>
           <td align=center><b>ASV1</b></td>
           <td align=center><b>asusasvd.dll</b></td>
-          <td align=center><b>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2108,7 +2108,7 @@
           <td align=center><b>IBM Ultimotion</b></td>
           <td align=center><b>ULTI</b></td>
           <td align=center><b>ultimo.dll</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2116,7 +2116,7 @@
           <td align=center><b>Windows Screen Video</b></td>
           <td align=center><b>MSS1</b></td>
           <td align=center><b>msscds32.ax</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2124,7 +2124,7 @@
           <td align=center><b>UCOD-ClearVideo</b></td>
           <td align=center><b>UCOD</b></td>
           <td align=center><b>clrviddd.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2156,7 +2156,7 @@
           <td align=center><b>Creative Labs Video Blaster Webcam</b></td>
           <td align=center><b>CJPG</b></td>
           <td align=center><b>CtWbJpg.DLL</b></td>
-          <td align=center><b>YUY2<br>UYVY<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>UYVY<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b>sequential jpeg files?</b></td>
         </tr>
 <!--  -->
@@ -2188,7 +2188,7 @@
           <td align=center><b>Duck Truemotion1</b></td>
           <td align=center><b>DUCK<br>PVEZ</b></td>
           <td align=center><b>truemotion1</b></td>
-          <td align=center><b>BGR15LE<br>BGR16<br>BGR24<br>BGR32</b></td>
+          <td align=center><b>BGR15<br>BGR16<br>BGR24<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2204,7 +2204,7 @@
           <td align=center><b>TrueMotion 2.0</b></td>
           <td align=center><b>TM20</b></td>
           <td align=center><b>tm20dec.ax</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b>YUV faulting</b></td>
         </tr>
 <!--  -->
@@ -2212,7 +2212,7 @@
           <td align=center><b>TrueMotion 2.0</b></td>
           <td align=center><b>TM2X<br>TM2A</b></td>
           <td align=center><b>tm2X.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2228,7 +2228,7 @@
           <td align=center><b>TrueMotion RT</b></td>
           <td align=center><b>TR20</b></td>
           <td align=center><b>tr2032.dll</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2268,7 +2268,7 @@
           <td align=center><b>SP5x codec - used by Aiptek MegaCam</b></td>
           <td align=center><b>SP53<br>SP54<br>SP55<br>SP56<br>SP57<br>SP58</b></td>
           <td align=center><b>sp5x_32.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2276,7 +2276,7 @@
           <td align=center><b>SP4x codec - used by Aiptek MegaCam</b></td>
           <td align=center><b>SP40<br>SP41<br>SP42<br>SP43<br>SP44<br>SP45<br>SP46<br>SP47</b></td>
           <td align=center><b>SP4X_32.DLL</b></td>
-          <td align=center><b>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2300,7 +2300,7 @@
           <td align=center><b>csmscreen AVI lossless video codec</b></td>
           <td align=center><b>CSM0</b></td>
           <td align=center><b>csmx.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b>requires Esdll.dll</b></td>
         </tr>
 <!--  -->
@@ -2316,7 +2316,7 @@
           <td align=center><b>ffscpr</b></td>
           <td align=center><b>SCPR</b></td>
           <td align=center><b>scpr</b></td>
-          <td align=center><b>BGR32<br>ARGB</b></td>
+          <td align=center><b>BGRA<br>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2324,7 +2324,7 @@
           <td align=center><b>ScreenPressor Lossless Codec</b></td>
           <td align=center><b>SCPR</b></td>
           <td align=center><b>scpr.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2332,7 +2332,7 @@
           <td align=center><b>zdsoft screen recorder</b></td>
           <td align=center><b>ZDSV</b></td>
           <td align=center><b>scrvid.dll</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2348,7 +2348,7 @@
           <td align=center><b>INMC</b></td>
           <td align=center><b>INMC<br>CFWL<br>IENP<br>IMP4<br>STM4<br>STS4</b></td>
           <td align=center><b>MultiCodec.dll</b></td>
-          <td align=center><b>BGR15LE<br>BGR16<br>BGR24<br>BGR32<br>RGB16<br>RGB24<br>RGB32</b></td>
+          <td align=center><b>BGR15<br>BGR16<br>BGR24<br>ARGB<br>RGB16<br>RGB24<br>RGB32</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2356,7 +2356,7 @@
           <td align=center><b>Mirillis Action screen capture codec</b></td>
           <td align=center><b>FICV</b></td>
           <td align=center><b>ficvdec_x86.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b>requires msvcm90.dll msvcp90.dll msvcr90.dll</b></td>
         </tr>
 <!--  -->
@@ -2364,7 +2364,7 @@
           <td align=center><b>FFmpeg Kega Video</b></td>
           <td align=center><b>KGV1</b></td>
           <td align=center><b>kgv1</b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2436,7 +2436,7 @@
           <td align=center><b>FFmpeg foxmotion video</b></td>
           <td align=center><b>FMVC</b></td>
           <td align=center><b>fmvc</b></td>
-          <td align=center><b>BGR24<br>BGR32<br>BGR15LE</b></td>
+          <td align=center><b>BGR24<br>BGRA<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2444,7 +2444,7 @@
           <td align=center><b>fox motion video</b></td>
           <td align=center><b>FMVC</b></td>
           <td align=center><b>fmcodec.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2468,7 +2468,7 @@
           <td align=center><b>SoftMedia ViVD V2 codec VfW</b></td>
           <td align=center><b>GXVE<br>gxve</b></td>
           <td align=center><b>ViVD2.dll</b></td>
-          <td align=center><b>YUY2<br>YV12<br>I420<br>YVU9<br>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>YUY2<br>YV12<br>I420<br>YVU9<br>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2476,7 +2476,7 @@
           <td align=center><b>Winnov Videum winx codec</b></td>
           <td align=center><b>WINX</b></td>
           <td align=center><b>wnvwinx.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2492,7 +2492,7 @@
           <td align=center><b>Winnov Videum wnv1 codec</b></td>
           <td align=center><b>WNV1<br>YUV8<br>yuv8</b></td>
           <td align=center><b>wnvplay1.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2516,7 +2516,7 @@
           <td align=center><b>Vianet Lsvx Video</b></td>
           <td align=center><b>lsvx<br>lsvm<br>lsvc</b></td>
           <td align=center><b>lsvxdec.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR16</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR16</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2524,7 +2524,7 @@
           <td align=center><b>FFmpeg VMware video</b></td>
           <td align=center><b>VMnc</b></td>
           <td align=center><b>vmnc</b></td>
-          <td align=center><b>BGR32<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>ARGB<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2532,7 +2532,7 @@
           <td align=center><b>VMware video</b></td>
           <td align=center><b>VMnc</b></td>
           <td align=center><b>vmnc.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2556,7 +2556,7 @@
           <td align=center><b>FFmpeg DNxHD</b></td>
           <td align=center><b>AVdn</b></td>
           <td align=center><b>dnxhd</b></td>
-          <td align=center><b>422P<br>422P10<br>444P10LE</b></td>
+          <td align=center><b>422P<br>422P10<br>444P10BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2644,7 +2644,7 @@
           <td align=center><b>cinewave uncompressed 10-bit codec</b></td>
           <td align=center><b>v210</b></td>
           <td align=center><b>CineWave.qtx</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR8<br>Y800<br>RGB32<br>RGB24<br>RGB8<br>YV12<br>YUY2</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR8<br>Y800<br>RGB32<br>RGB24<br>RGB8<br>YV12<br>YUY2</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2652,7 +2652,7 @@
           <td align=center><b>FFmpeg Apple Pixlet</b></td>
           <td align=center><b>pxlt</b></td>
           <td align=center><b>pixlet</b></td>
-          <td align=center><b>420P16LE</b></td>
+          <td align=center><b>420P16BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2676,7 +2676,7 @@
           <td align=center><b>FFmpeg Apple ProRes</b></td>
           <td align=center><b>apch<br>apcn<br>apcs<br>apco<br>ap4h<br>ap4x</b></td>
           <td align=center><b>prores</b></td>
-          <td align=center><b>422P10<br>444P10LE</b></td>
+          <td align=center><b>422P10<br>444P10BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2684,7 +2684,7 @@
           <td align=center><b>Libav ProRes</b></td>
           <td align=center><b>apch<br>apcn<br>apcs<br>apco<br>ap4h<br>ap4x</b></td>
           <td align=center><b>prores_lgpl</b></td>
-          <td align=center><b>422P10<br>444P10LE</b></td>
+          <td align=center><b>422P10<br>444P10BE</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2764,7 +2764,7 @@
           <td align=center><b>FFmpeg TechSmith Camtasia Screen Codec</b></td>
           <td align=center><b>TSCC<br>tscc</b></td>
           <td align=center><b>camtasia</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2780,7 +2780,7 @@
           <td align=center><b>TechSmith Camtasia Screen Codec</b></td>
           <td align=center><b>TSCC<br>tscc</b></td>
           <td align=center><b>tsccvid.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2788,7 +2788,7 @@
           <td align=center><b>TechSmith Camtasia Screen Codec 2</b></td>
           <td align=center><b>TSC2<br>tsc2</b></td>
           <td align=center><b>tsc2_codec32.dll</b></td>
-          <td align=center><b>BGR32<br>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>ARGB<br>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b>works on winxp only</b></td>
         </tr>
 <!--  -->
@@ -2796,7 +2796,7 @@
           <td align=center><b>CamStudio Screen Codec</b></td>
           <td align=center><b>CSCD<br>cscd</b></td>
           <td align=center><b>camstudio</b></td>
-          <td align=center><b>BGR32<br>BGR32<br>BGR24<br>BGR15LE<br>BGR15LE</b></td>
+          <td align=center><b>BGRA<br>ARGB<br>BGR24<br>BGR15LE<br>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2804,7 +2804,7 @@
           <td align=center><b>FRAPS: Realtime Video Capture</b></td>
           <td align=center><b>FPS1<br>fps1</b></td>
           <td align=center><b>frapsvid.dll</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b>Requires a processor with SSE???</b></td>
         </tr>
 <!--  -->
@@ -2892,7 +2892,7 @@
           <td align=center><b>FFmpeg Renderware TeXture Dictionary</b></td>
           <td align=center><b>TXDV</b></td>
           <td align=center><b>txd</b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2908,7 +2908,7 @@
           <td align=center><b>XAN Video</b></td>
           <td align=center><b>Xxan</b></td>
           <td align=center><b>xanlib.dll</b></td>
-          <td align=center><b>BGR24<br>BGR15LE<br>BGR8</b></td>
+          <td align=center><b>BGR24<br>BGR15<br>BGR8</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2980,7 +2980,7 @@
           <td align=center><b>RAW BGR32</b></td>
           <td align=center><b>-</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -2988,7 +2988,7 @@
           <td align=center><b>RAW BGR32</b></td>
           <td align=center><b>-<br> RGB</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>BGR32</b></td>
+          <td align=center><b>ARGB</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -3028,7 +3028,7 @@
           <td align=center><b>RAW BGR15</b></td>
           <td align=center><b>-</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -3036,7 +3036,7 @@
           <td align=center><b>RAW BGR15</b></td>
           <td align=center><b>-<br>raw <br>RGB</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>BGR15LE</b></td>
+          <td align=center><b>BGR15</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -3252,7 +3252,7 @@
           <td align=center><b>RAW ABGR</b></td>
           <td align=center><b>ABGR</b></td>
           <td align=center><b>rawvideo</b></td>
-          <td align=center><b>ABGR</b></td>
+          <td align=center><b>RGB32</b></td>
           <td align=center colspan=2><b></b></td>
         </tr>
 <!--  -->
@@ -3260,7 +3260,7 @@
           <td align=center><b>NULL codec (no decoding!)</b></td>
           <td align=center><b>-</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>YVU9<br>BGR32<br>BGR24<br>BGR16<br>BGR15LE</b></td>
+          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>YVU9<br>ARGB<br>BGR24<br>BGR16<br>BGR15</b></td>
           <td align=center colspan=2><b>for unknown/unsupported codecs or testing</b></td>
         </tr>
 <!--  -->
@@ -3268,7 +3268,7 @@
           <td align=center><b>black codec (no decoding just output black frames!)</b></td>
           <td align=center><b>-</b></td>
           <td align=center><b></b></td>
-          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>RGB24<br>BGR32</b></td>
+          <td align=center><b>YV12<br>I420<br>YUY2<br>UYVY<br>RGB24<br>ARGB</b></td>
           <td align=center colspan=2><b>for unknown/unsupported codecs or testing</b></td>
         </tr>
 <!--  -->
@@ -3382,13 +3382,6 @@
           <td align=center><b>QuickTime sheervideo</b></td>
           <td align=center><b>Shr0</b></td>
           <td align=center><b>SheerVideo Pro.qtx</b></td>
-          <td align=center colspan=3><b></b></td>
-        </tr>
-<!--  -->
-        <tr>
-          <td align=center><b>FFmpeg MPEG-1/2 (XvMC) - deprecated<br> just use ffmpeg12</b></td>
-          <td align=center><b>-<br><br>mpg1<br>mpg2<br>MPG2<br>DVR <br>PIM1<br>PIM2<br>VCR2<br>MPEG<br>mx5p<br>MMES<br>mmes<br>hdv1<br>hdv2<br>hdv3<br>hdv4<br>hdv5<br>hdv6<br>hdv7<br>hdv8<br>hdv9<br>hdva<br>xdhd<br>xdh2<br>xdv1<br>xdv2<br>xdv3<br>xdv4<br>xdv5<br>xdv6<br>xdv7<br>xdv8<br>xdv9<br>xdva<br>xdvb<br>xdvc<br>xdvd<br>xdve<br>xdvf<br>xd5a<br>xd5b<br>xd5c<br>xd5d<br>xd5e<br>xd5f<br>xd59<br>xd54<br>xd55<br>xd51<br>mx5n<br>mx4n<br>mx4p<br>mx3n<br>mx3p<br>AVmp<br>mp2v<br>mpgv<br>m2v1<br>m1v1<br>m1v <br>LMP2</b></td>
-          <td align=center><b>mpegvideo_xvmc</b></td>
           <td align=center colspan=3><b></b></td>
         </tr>
 <!--  -->

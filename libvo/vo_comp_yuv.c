@@ -1,3 +1,4 @@
+#include "../amigaos/amiga_version.h"
 /*
  * This file is part of MPlayer.
  *

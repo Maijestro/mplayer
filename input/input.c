@@ -58,18 +58,6 @@
 #include <lirc/lircc.h>
 #endif
 
-//markus
-#ifdef __amigaos4__
-#define debug_level 0
-
-#if debug_level > 0
-#define dprintf( ... ) IDOS->Printf( __VA_ARGS__ )
-#else
-#define dprintf(...)
-#endif
-#include "../amigaos/debug.h"
-#endif //amigaos4
-
 #include "ar.h"
 
 /// This array defines all known commands.
@@ -100,9 +88,6 @@ const mp_cmd_t mp_cmds[] = {
   { MP_CMD_QUIT, "quit", 0, { {MP_CMD_ARG_INT,{0}}, {-1,{0}} } },
   { MP_CMD_STOP, "stop", 0, { {-1,{0}} } },
   { MP_CMD_PAUSE, "pause", 0, { {-1,{0}} } },
-//markus
-  { MP_CMD_PAUSE_SPACE, "pause_space", 0, { {-1,{0}} } },
-//
   { MP_CMD_FRAME_STEP, "frame_step", 0, { {-1,{0}} } },
   { MP_CMD_PLAY_TREE_STEP, "pt_step",1, { { MP_CMD_ARG_INT ,{0}}, { MP_CMD_ARG_INT ,{0}}, {-1,{0}} } },
   { MP_CMD_PLAY_TREE_UP_STEP, "pt_up_step",1,  { { MP_CMD_ARG_INT,{0} }, { MP_CMD_ARG_INT ,{0}}, {-1,{0}} } },
@@ -400,8 +385,8 @@ static const mp_cmd_bind_t def_cmd_binds[] = {
   // Ignore modifiers by default
   { { KEY_CTRL, 0 }, "ignore" },
 
-  { {  MOUSE_BTN3, 0 }, "seek 10" },
-  { {  MOUSE_BTN4, 0 }, "seek -10" },
+  { {  MOUSE_BTN3, 0 }, "volume 5" },
+  { {  MOUSE_BTN4, 0 }, "volume -5" },
   { {  MOUSE_BTN5, 0 }, "volume 1" },
   { {  MOUSE_BTN6, 0 }, "volume -1" },
 
@@ -432,17 +417,12 @@ static const mp_cmd_bind_t def_cmd_binds[] = {
   { { 'q', 0 }, "quit" },
   { { KEY_ESC, 0 }, "quit" },
   { { 'p', 0 }, "pause" },
-//markus
-  { { ' ', 0 }, "pause_space" },
-//
+  { { ' ', 0 }, "pause" },
   { { '.', 0 }, "frame_step" },
   { { KEY_HOME, 0 }, "pt_up_step 1" },
   { { KEY_END, 0 }, "pt_up_step -1" },
   { { '>', 0 }, "pt_step 1" },
-//markus ENTER = FULLSCREEN
-//  { { KEY_ENTER, 0 }, "pt_step 1 1" },
-//end markus
-  { { KEY_ENTER, 0}, "vo_fullscreen" },
+  { { KEY_ENTER, 0 }, "vo_fullscreen" },
   { { '<', 0 }, "pt_step -1" },
   { { KEY_INS, 0 }, "alt_src_step 1" },
   { { KEY_DEL, 0 }, "alt_src_step -1" },
@@ -1293,12 +1273,12 @@ static mp_cmd_t *read_events(int time, int paused)
 	    }
 	    else
 		time_val = NULL;
-#ifdef __amigaos4__
+#ifdef __AMIGAOS4__
             if (select(max_fd + 1, &fds, NULL, NULL, time_val) == -1) {
                 if ((errno != EINTR)&&(errno != 0))
                 {
                     mp_msg(MSGT_INPUT, MSGL_ERR, MSGTR_INPUT_INPUT_ErrSelect,    strerror(errno));
-                        dprintf("AmigaOS 4.1 Bug select() don't reset or set errno value\n");
+                        mp_msg(MSGT_INPUT,"AmigaOS 4.1 Bug select() don't reset or set errno value\n",0);
                         errno = 0;
                 }
                 else if ((errno == 0))

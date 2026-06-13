@@ -16,15 +16,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef __amigaos4__
-//markus
-extern long arexx_gui;
-//
-#include <proto/dos.h>
-extern void set_arexx_result(long v) ;
-#endif
-
-
 #define _BSD_SOURCE
 
 #include <stdlib.h>
@@ -655,14 +646,6 @@ static int mp_property_pause(m_option_t *prop, int action, void *arg,
     return m_property_flag_ro(prop, action, arg, mpctx->osd_function == OSD_PAUSE);
 }
 
-//markus
-static int mp_property_pause_space(m_option_t *prop, int action, void *arg,
-                             MPContext *mpctx)
-{
-        return M_PROPERTY_NOT_IMPLEMENTED;
-
-}
-//
 
 ///@}
 
@@ -2140,10 +2123,6 @@ static const m_option_t mp_properties[] = {
      0, 0, 0, NULL },
     { "pause", mp_property_pause, CONF_TYPE_FLAG,
      M_OPT_RANGE, 0, 1, NULL },
-//markus
-    { "pause_space", mp_property_pause_space, CONF_TYPE_FLAG,
-     M_OPT_RANGE, 0, 1, NULL },
-//
     { "capturing", mp_property_capture, CONF_TYPE_FLAG,
      M_OPT_RANGE, 0, 1, NULL },
 
@@ -2779,18 +2758,10 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
             } break;
 
         case MP_CMD_FRAME_STEP:
-//markus
-        case MP_CMD_PAUSE_SPACE:{
-             if (arexx_gui==FALSE) {
-               cmd->pausing = 1;
-               brk_cmd = 1;
-             }
-           } break;
-//end markus
-        case MP_CMD_PAUSE:{
-             cmd->pausing = 1;
-             brk_cmd = 1;
-           } break;
+        case MP_CMD_PAUSE:
+            cmd->pausing = 1;
+            brk_cmd = 1;
+            break;
 
         case MP_CMD_FILE_FILTER:
             file_filter = cmd->args[0].v.i;
@@ -3251,7 +3222,6 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                 mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_LENGTH=%.2f\n",
                        demuxer_get_time_length(mpctx->demuxer));
             }
-            set_arexx_result((long)(1000.0*demuxer_get_time_length(mpctx->demuxer)));
             break;
 
         case MP_CMD_GET_FILENAME:{
@@ -3381,13 +3351,11 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
         case MP_CMD_GET_VO_FULLSCREEN:
             if (mpctx->video_out && vo_config_count)
                 mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_VO_FULLSCREEN=%d\n", vo_fs);
-            set_arexx_result(vo_fs);
             break;
 
         case MP_CMD_GET_PERCENT_POS:
             mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_PERCENT_POSITION=%d\n",
                    demuxer_get_percent_pos(mpctx->demuxer));
-            set_arexx_result(demuxer_get_percent_pos(mpctx->demuxer));
             break;
 
         case MP_CMD_GET_TIME_POS:{
@@ -3399,7 +3367,6 @@ int run_command(MPContext *mpctx, mp_cmd_t *cmd)
                         playing_audio_pts(sh_audio, mpctx->d_audio,
                                           mpctx->audio_out);
                 mp_msg(MSGT_GLOBAL, MSGL_INFO, "ANS_TIME_POSITION=%.1f\n", pos);
-                set_arexx_result((long)(1000.0*pos));
             }
             break;
 

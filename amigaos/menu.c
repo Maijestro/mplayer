@@ -40,6 +40,7 @@
 
 #include "input/input.h"
 #include "arexx.h"
+#include "amiga_version.h"
 #include "menu.h"
 #include "../osdep/keycodes.h"
 #include "../version.h"
@@ -178,7 +179,8 @@ void blink_screen(void)
 extern char *TOOL_MPGUI;
 extern char *SUBEXTPAT;
 extern char *EXTPATTERN;
-extern MPContext *mpctx;
+extern MPContext *mpctx_global;
+#define mpctx mpctx_global
 
 
 // MUST match struct NewMenu order
@@ -1745,7 +1747,7 @@ void menu_events( struct IntuiMessage *IntuiMsg)
 }
 
 
-void open_AboutInfowindow(struct pmpMessage *pmp)
+#if 0 /* open_AboutInfowindow disabled - InfoWindow API not available */
 {
 	Object *win_About;
 	struct Hook BackFillHook = { {NULL, NULL}, (HOOKFUNC)BackFillFunc, NULL, NULL };
@@ -1763,9 +1765,9 @@ void open_AboutInfowindow(struct pmpMessage *pmp)
 	APTR h;
 	struct TagItem tags[4];
 	struct InfoWindowTab tabs[] = {
-		{ CS(MSG_About_About), pmp->text, TABDATA_STRING },
-		{ CS(MSG_About_Licence), license_path, TABDATA_FILE },
-		{ NULL, NULL, TABDATA_END }
+		{ CS(MSG_About_About), pmp->text, 1 },
+		{ CS(MSG_About_Licence), license_path, 2 },
+		{ NULL, NULL, 0 }
 	};
 
 	//choosing(TRUE);		// Not selecting file, but need to know if a window is open
@@ -1890,6 +1892,7 @@ bailout:
 
 	//choosing(FALSE);
 }
+#endif
 
 void ShowAbout(void)
 {
@@ -1971,8 +1974,8 @@ DBUG("ShowAbout() pmp=%p\n",pmp);
 	if (About_Process) spawn_count++;
 	else*/
 	{
-		if(InfoWindowBase) open_AboutInfowindow(pmp) ;
-		else PrintMsg(pmp->text, REQTYPE_INFO, REQIMAGE_INFO, CS(MSG_Requester_Title_About));
+		// InfoWindowBase disabled
+		PrintMsg(pmp->text, REQTYPE_INFO, REQIMAGE_INFO, CS(MSG_Requester_Title_About));
 
 		FreeVec(pmp);
 	}
@@ -2295,8 +2298,8 @@ static int32 PrintMsgProc(STRPTR args UNUSED, int32 length UNUSED, struct ExecBa
 DBUG("PrintMsgProc() pmp=%p\n",pmp);
 	if(pmp)
 	{
-		if(InfoWindowBase) open_AboutInfowindow(pmp);
-		else PrintMsg(pmp->text, pmp->type, pmp->image, CS(MSG_Requester_Title_About));
+		// InfoWindowBase disabled
+		PrintMsg(pmp->text, pmp->type, pmp->image, CS(MSG_Requester_Title_About));
 
 		FreeVec(pmp);
 		return RETURN_OK;
@@ -2537,10 +2540,10 @@ void open_InfoWindow_Properties(STRPTR vid_str, STRPTR aud_str, STRPTR clip_str)
 	Object *win_Prop;
 	struct Screen *scr = Menu_Window? Menu_Window->WScreen : NULL;
 	struct InfoWindowTab tabs[] = {
-		{ CS(MSG_Properties_IW_Video), vid_str, TABDATA_STRING },
-		{ CS(MSG_Properties_IW_Audio), aud_str, TABDATA_STRING },
-		{ CS(MSG_Properties_IW_Clip), clip_str, TABDATA_STRING },
-		{ NULL, NULL, TABDATA_END }
+		{ CS(MSG_Properties_IW_Video), vid_str, 1 },
+		{ CS(MSG_Properties_IW_Audio), aud_str, 1 },
+		{ CS(MSG_Properties_IW_Clip), clip_str, 1 },
+		{ NULL, NULL, 0 }
 	};
 // DBUG("\n[V] %s\n\n[A] %s\n\n%s\n",vid_str,aud_str,clip_str);
 DBUG("FrontMostScr()=0x%08lx   Menu_Window->WScreen=0x%08lx\n",FrontMostScr(),scr);

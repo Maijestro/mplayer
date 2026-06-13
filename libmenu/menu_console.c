@@ -38,7 +38,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#if defined(__MORPHOS__) || defined(__amigaos4__)
+#if defined(__MORPHOS__) || defined(__AMIGAOS4__)
 #include <proto/dos.h>
 #endif
 
@@ -251,8 +251,7 @@ static void draw(menu_t* menu, mp_image_t* mpi) {
 }
 
 static void check_child(menu_t* menu) {
-
-#ifdef __amigaos4__
+#ifdef __AMIGAOS4__
 printf("libmenu/menu_console.c - %s:%d\n",__FUNCTION__,__LINE__);
 #else
 #if RUN_CMD
@@ -303,20 +302,20 @@ printf("libmenu/menu_console.c - %s:%d\n",__FUNCTION__,__LINE__);
     }
   }
 #endif
-#endif // amigaos4
+#endif
 }
 
 #define close_pipe(pipe) close(pipe[0]); close(pipe[1])
 
 static int run_shell_cmd(menu_t* menu, char* cmd) {
-#if defined(__MORPHOS__) || defined(__amigaos4__)
+#if defined(__MORPHOS__) || defined(__AMIGAOS4__)
   BPTR out;
 
   mp_msg(MSGT_GLOBAL,MSGL_INFO,MSGTR_LIBMENU_ConsoleRun,cmd);
 
   out = Open("T:mplayer_cmd_output", MODE_NEWFILE);
 
-#if defined(__amigaos4__)
+#ifdef __AMIGAOS4__
   SystemTags(cmd, SYS_Output,out? out : Output() ,TAG_DONE);
 #else
   Execute(cmd, NULL, out ? out : Output());
@@ -383,7 +382,7 @@ static int run_shell_cmd(menu_t* menu, char* cmd) {
   mpriv->prompt = mpriv->child_prompt;
   //add_line(mpriv,"Child process started");
 #endif
-#endif //amigaos
+#endif
   return 1;
 }
 

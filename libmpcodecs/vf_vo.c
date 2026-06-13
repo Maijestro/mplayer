@@ -28,6 +28,7 @@
 
 #include "sub/sub.h"
 #include "libvo/video_out.h"
+extern const vo_functions_t* vo_current_override;
 #include "sub/eosd.h"
 
 //===========================================================================//
@@ -72,8 +73,33 @@ static int config(struct vf_instance *vf,
     vf->default_caps=query_format(vf,outfmt);
     vf->draw_slice = (vf->default_caps & VOCAP_NOSLICES) ? NULL : draw_slice;
 
-    if(config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt))
-	return 0;
+    if(config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt)) {
+        /* config failed - try next VO in list */
+        extern const vo_functions_t* const video_out_drivers[];
+        int i;
+        for (i = 0; video_out_drivers[i]; i++) {
+            if (video_out_drivers[i] == video_out) {
+                if (video_out_drivers[i+1]) {
+                    const vo_functions_t *next_vo = video_out_drivers[i+1];
+                    mp_msg(MSGT_CPLAYER, MSGL_INFO, "VO: config failed, falling back to %s\n", next_vo->info->short_name);
+                    if (next_vo->preinit(NULL) == 0) {
+                        video_out->uninit();
+                        vf->priv->vo = (vo_functions_t *)next_vo;
+                        vo_current_override = next_vo; /* Signal mplayer.c */
+                        /* Update caps and draw_slice for new VO */
+                        vf->default_caps = query_format(vf, outfmt);
+                        vf->draw_slice = (vf->default_caps & VOCAP_NOSLICES) ? NULL : draw_slice;
+                        if (!config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt)) {
+                            ++vo_config_count;
+                            return 1;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        return 0;
+    }
 
     ++vo_config_count;
     return 1;
@@ -173,10 +199,13 @@ static int put_image(struct vf_instance *vf,
   vf->priv->endpts = endpts;
   // first check, maybe the vo/vf plugin implements draw_image using mpi:
   if(video_out->control(VOCTRL_DRAW_IMAGE,mpi)==VO_TRUE) return 1; // done.
+  // For HW frames: planes[3] contains the surface ID — always call draw_frame
+  if(IMGFMT_IS_HWACCEL(mpi->imgfmt)) {
+      video_out->draw_frame(mpi->planes);
+      return 1;
+  }
   // nope, fallback to old draw_frame/draw_slice:
   if(!(mpi->flags&(MP_IMGFLAG_DIRECT|MP_IMGFLAG_DRAW_CALLBACK))){
-    // blit frame:
-//    if(mpi->flags&MP_IMGFLAG_PLANAR)
     if(vf->default_caps&VFCAP_ACCEPT_STRIDE)
         video_out->draw_slice(mpi->planes,mpi->stride,mpi->w,mpi->h,mpi->x,mpi->y);
     else

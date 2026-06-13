@@ -23,11 +23,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 #include "stream/stream.h"
 #include "sub/ass_mp.h"
 #include "m_option.h"
+
+#ifdef __AMIGAOS4__
+#include <limits.h>
+#endif
 
 #ifdef HAVE_BUILTIN_EXPECT
 #define likely(x) __builtin_expect ((x) != 0, 1)
@@ -37,8 +40,8 @@
 #define unlikely(x) (x)
 #endif
 
-#define MAX_PACKS 4096
-#define MAX_PACK_BYTES 0x2000000
+#define MAX_PACKS 512
+#define MAX_PACK_BYTES 0x800000
 
 #define DEMUXER_TYPE_UNKNOWN 0
 #define DEMUXER_TYPE_MPEG_ES 1
@@ -85,11 +88,12 @@
 #define DEMUXER_TYPE_LAVF_PREFERRED 44
 #define DEMUXER_TYPE_RTP_NEMESI 45
 #define DEMUXER_TYPE_MNG 46
+#define DEMUXER_TYPE_MOD 47
 
 // This should always match the highest demuxer type number.
 // Unless you want to disallow users to force the demuxer to some types
 #define DEMUXER_TYPE_MIN 0
-#define DEMUXER_TYPE_MAX 46
+#define DEMUXER_TYPE_MAX 47
 
 #define DEMUXER_TYPE_DEMUXERS (1<<16)
 // A virtual demuxer type for the network code

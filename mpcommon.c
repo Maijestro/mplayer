@@ -620,7 +620,13 @@ int common_init(void)
                        filename_recode(font_name));
         } else {
             // try default:
-              vo_font = read_font_desc(MPLAYER_DATADIR "/Conf/font/font.desc", font_factor, verbose>1);
+#ifndef __AMIGAOS4__
+            char *desc_path = get_path("font/font.desc");
+            vo_font = read_font_desc(desc_path, font_factor, verbose>1);
+            free(desc_path);
+            if (!vo_font)
+#endif
+                vo_font = read_font_desc(MPLAYER_DATADIR "/font/font.desc", font_factor, verbose>1);
         }
         if (sub_font_name)
             sub_font = read_font_desc(sub_font_name, font_factor, verbose>1);
@@ -641,6 +647,14 @@ void common_uninit(void)
 {
     spudec_free(vo_spudec);
     vo_spudec = NULL;
+
+    /* v148: FFmpeg Log-Callback zuruecksetzen */
+    av_log_set_callback(NULL);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    /* v148: OpenSSL Mutex freigeben */
+    // ff_openssl_deinit();
+#endif
 #ifdef CONFIG_FREETYPE
     current_module = "uninit_font";
     if (sub_font && sub_font != vo_font)

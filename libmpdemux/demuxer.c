@@ -113,6 +113,7 @@ extern const demuxer_desc_t demuxer_desc_lavf_preferred;
 extern const demuxer_desc_t demuxer_desc_aac;
 extern const demuxer_desc_t demuxer_desc_nut;
 extern const demuxer_desc_t demuxer_desc_mng;
+extern const demuxer_desc_t demuxer_desc_mod;
 
 // never add this to the list
 extern const demuxer_desc_t demuxer_desc_demuxers;
@@ -181,15 +182,16 @@ const demuxer_desc_t *const demuxer_list[] = {
     &demuxer_desc_rawdv,
 #endif
     &demuxer_desc_aac,
-#ifdef CONFIG_LIBNUT
+#if CONFIG_LIBNUT
     &demuxer_desc_nut,
 #endif
 #ifdef CONFIG_XMMS
     &demuxer_desc_xmms,
 #endif
-#ifdef CONFIG_MNG
+#if CONFIG_MNG
     &demuxer_desc_mng,
 #endif
+    &demuxer_desc_mod,
     /* Please do not add any new demuxers here. If you want to implement a new
      * demuxer, add it to libavformat, except for wrappers around external
      * libraries and demuxers requiring binary support. */
@@ -1414,13 +1416,11 @@ int demux_seek(demuxer_t *demuxer, float rel_seek_secs, float audio_delay,
     } else
         pts += rel_seek_secs;
 
-#ifndef __amigaos4__ /* Seeking crashed if -audiofile was used with TLS link */
     if (stream_control(demuxer->stream, STREAM_CTRL_SEEK_TO_TIME, &pts) !=
         STREAM_UNSUPPORTED) {
         demux_resync(demuxer);
         return 1;
     }
-#endif
 
   dmx_seek:
     if (demuxer->desc->seek)

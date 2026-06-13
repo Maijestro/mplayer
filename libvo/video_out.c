@@ -1,23 +1,4 @@
 /*
- * This file is part of MPlayer.
- *
- * MPlayer is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * MPlayer is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with MPlayer; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
-
-/*
  * libvo common functions, variables used by many/all drivers.
  *
  * This file is part of MPlayer.
@@ -42,7 +23,7 @@
 #include <string.h>
 
 #include <unistd.h>
-// #include <sys/mman.h>
+//#include <sys/mman.h>
 
 #include "config.h"
 #include "video_out.h"
@@ -57,20 +38,20 @@
 #include "input/input.h"
 #include "osdep/shmem.h"
 
-// int vo_flags=0;
+//int vo_flags=0;
 
 int xinerama_screen = -1;
 int xinerama_x;
 int xinerama_y;
 
-// Currect resolution/bpp on screen:  (should be autodetected by vo_init())
+// currect resolution/bpp on screen:  (should be autodetected by vo_init())
 int vo_depthonscreen=0;
 int vo_screenwidth=0;
 int vo_screenheight=0;
 
 int vo_config_count=0;
 
-// Requested resolution/bpp:  (-x -y -bpp options)
+// requested resolution/bpp:  (-x -y -bpp options)
 int vo_dx=0;
 int vo_dy=0;
 int vo_dwidth=0;
@@ -99,18 +80,18 @@ int vo_rootwin=0;
 int vo_border=1;
 int64_t WinID = -1;
 
-int vo_pts=0; // For hw decoding
+int vo_pts=0; // for hw decoding
 float vo_fps=0;
 
 char *vo_subdevice = NULL;
 int vo_directrendering=0;
 
-int vo_colorkey = 0x0000ff00; // Default colorkey is green
+int vo_colorkey = 0x0000ff00; // default colorkey is green
                               // (0xff000000 means that colorkey has been disabled)
 
-// Name to be used instead of the vo's default
+// name to be used instead of the vo's default
 char *vo_winname;
-// Title to be applied to movie window
+// title to be applied to movie window
 char *vo_wintitle;
 
 //
@@ -119,7 +100,6 @@ char *vo_wintitle;
 extern const vo_functions_t video_out_mga;
 extern const vo_functions_t video_out_xmga;
 extern const vo_functions_t video_out_x11;
-extern const vo_functions_t video_out_xvmc;
 extern const vo_functions_t video_out_vdpau;
 extern const vo_functions_t video_out_xv;
 extern const vo_functions_t video_out_gl_nosw;
@@ -128,7 +108,6 @@ extern const vo_functions_t video_out_gl_tiled;
 extern const vo_functions_t video_out_matrixview;
 extern const vo_functions_t video_out_dga;
 extern const vo_functions_t video_out_sdl;
-extern const vo_functions_t video_out_sdl_sm502;
 extern const vo_functions_t video_out_3dfx;
 extern const vo_functions_t video_out_tdfxfb;
 extern const vo_functions_t video_out_s3fb;
@@ -163,13 +142,15 @@ extern const vo_functions_t video_out_pnm;
 extern const vo_functions_t video_out_md5sum;
 extern const vo_functions_t video_out_mng;
 
-extern const vo_functions_t video_out_comp;
-extern const vo_functions_t video_out_comp_yuv;
-extern const vo_functions_t video_out_comp_yuv2;
-extern const vo_functions_t video_out_cgx_wpa;
+#ifdef __AMIGAOS4__
 extern const vo_functions_t video_out_p96_pip;
-extern const vo_functions_t video_out_pip;
+extern const vo_functions_t video_out_comp_yuv2;
+extern const vo_functions_t video_out_comp_yuv;
+extern const vo_functions_t video_out_comp;
+extern const vo_functions_t video_out_cgx_wpa;
 extern const vo_functions_t video_out_amiga;
+extern const vo_functions_t video_out_vaapi;
+#endif
 
 /* The following declarations are _not_ const because functions pointers
  * get overloaded during (re)initialization. */
@@ -183,15 +164,6 @@ extern vo_functions_t video_out_xvidix;
 
 const vo_functions_t* const video_out_drivers[] =
 {
-
-		&video_out_comp_yuv2,
-		&video_out_comp_yuv,
-		&video_out_p96_pip,
-		&video_out_comp,
-		&video_out_amiga,
-		&video_out_cgx_wpa,
-		&video_out_pip,
-
 #ifdef CONFIG_XVR100
         &video_out_xvr100,
 #endif
@@ -208,7 +180,7 @@ const vo_functions_t* const video_out_drivers[] =
         &video_out_kva,
 #endif
 #ifdef CONFIG_COREVIDEO
-#ifdef CONFIG_GL
+#if CONFIG_GL
         &video_out_gl_nosw,
 #endif
         &video_out_corevideo,
@@ -237,11 +209,18 @@ const vo_functions_t* const video_out_drivers[] =
 #if CONFIG_VDPAU
         &video_out_vdpau,
 #endif
+#if CONFIG_VAAPI
+        &video_out_vaapi,
+#endif
+        &video_out_comp_yuv2,
+#ifdef CONFIG_SDL
+        &video_out_sdl,
+#endif
 #ifdef CONFIG_XV
         &video_out_xv,
 #endif
 #ifndef CONFIG_COREVIDEO
-#ifdef CONFIG_GL
+#if CONFIG_GL
         &video_out_gl_nosw,
 #endif
 #endif
@@ -251,9 +230,8 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
 #ifdef CONFIG_SDL
         &video_out_sdl,
-        &video_out_sdl_sm502,
 #endif
-#ifdef CONFIG_GL
+#if CONFIG_GL
         &video_out_gl,
 #endif
 #if defined(CONFIG_GL_WIN32) || defined(CONFIG_GL_X11) || defined(CONFIG_GL_OSX)
@@ -272,7 +250,7 @@ const vo_functions_t* const video_out_drivers[] =
 #ifdef CONFIG_SVGALIB
         &video_out_svga,
 #endif
-#ifdef CONFIG_MATRIXVIEW
+#if CONFIG_MATRIXVIEW
         &video_out_matrixview,
 #endif
 #ifdef CONFIG_AA
@@ -313,9 +291,14 @@ const vo_functions_t* const video_out_drivers[] =
 #endif
         &video_out_cvidix,
 #endif
-        // Should not be auto-selected
-#if CONFIG_XVMC
-        &video_out_xvmc,
+#ifdef __AMIGAOS4__
+        &video_out_p96_pip,
+        &video_out_comp_yuv2,
+        &video_out_comp_yuv,
+        &video_out_comp,
+        &video_out_cgx_wpa,
+        &video_out_vaapi,
+        &video_out_amiga,
 #endif
         &video_out_null,
         &video_out_mpegpes,
@@ -340,7 +323,7 @@ const vo_functions_t* const video_out_drivers[] =
 #ifdef CONFIG_MD5SUM
         &video_out_md5sum,
 #endif
-#ifdef CONFIG_MNG
+#if CONFIG_MNG
         &video_out_mng,
 #endif
         NULL
@@ -352,14 +335,17 @@ void list_video_out(void){
       mp_msg(MSGT_IDENTIFY, MSGL_INFO, "ID_VIDEO_OUTPUTS\n");
       while (video_out_drivers[i]) {
         const vo_info_t *info = video_out_drivers[i++]->info;
-        mp_msg(MSGT_GLOBAL, MSGL_INFO,"\t%-16s\t%s\n", info->short_name, info->name);
+        mp_msg(MSGT_GLOBAL, MSGL_INFO,"\t%s\t%s\n", info->short_name, info->name);
       }
       mp_msg(MSGT_GLOBAL, MSGL_INFO,"\n");
 }
 
+/* Global VO override for fallback switching */
+const vo_functions_t* vo_current_override = NULL;
+
 const vo_functions_t* init_best_video_out(char** vo_list){
     int i;
-    // First try the preferred drivers, with their optional subdevice param:
+    // first try the preferred drivers, with their optional subdevice param:
     if(vo_list && vo_list[0])
       while(vo_list[0][0]){
         char* buffer=strdup(vo_list[0]);
@@ -389,10 +375,10 @@ const vo_functions_t* init_best_video_out(char** vo_list){
 		}
 	    }
 	}
-        // Continue...
+        // continue...
 	free(buffer);
 	++vo_list;
-	if(!(vo_list[0])) return NULL; // Do NOT fallback to others
+	if(!(vo_list[0])) return NULL; // do NOT fallback to others
       }
     // now try the rest...
     vo_subdevice=NULL;
@@ -434,7 +420,7 @@ int config_video_out(const vo_functions_t *vo, uint32_t width, uint32_t height,
 }
 
 /**
- * \Brief lookup an integer in a table, table must have 0 as the last key
+ * \brief lookup an integer in a table, table must have 0 as the last key
  * \param key key to search for
  * \result translation corresponding to key or "to" value of last mapping
  *         if not found.
@@ -445,7 +431,7 @@ int lookup_keymap_table(const struct mp_keymap *map, int key) {
 }
 
 /**
- * \Brief helper function for the kind of panscan-scaling that needs a source
+ * \brief helper function for the kind of panscan-scaling that needs a source
  *        and destination rectangle like Direct3D and VDPAU
  */
 static void src_dst_split_scaling(int src_size, int dst_size, int scaled_src_size,
@@ -472,7 +458,7 @@ static void src_dst_split_scaling(int src_size, int dst_size, int scaled_src_siz
  * get a correctly scaled picture, including pan-scan.
  * Can be extended to take future cropping support into account.
  *
- * \Param crop specifies the cropping border size in the left, right, top and bottom members, may be NULL
+ * \param crop specifies the cropping border size in the left, right, top and bottom members, may be NULL
  * \param borders the border values as e.g. EOSD (ASS) and properly placed DVD highlight support requires,
  *                may be NULL and only left and top are currently valid.
  */

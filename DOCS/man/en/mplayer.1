@@ -1,5 +1,5 @@
-.\" $Revision: 38408 $
-.\" MPlayer (C) 2000-2023 MPlayer Team
+.\" $Revision: 38685 $
+.\" MPlayer (C) 2000-2026 MPlayer Team
 .\" This man page was/is done by Gabucino, Diego Biurrun, Jonas Jermann
 .
 .\" --------------------------------------------------------------------------
@@ -31,7 +31,7 @@
 .\" Title
 .\" --------------------------------------------------------------------------
 .
-.TH MPlayer 1 "2022-02-27" "The MPlayer Project" "The Movie Player"
+.TH MPlayer 1 "2024-05-12" "The MPlayer Project" "The Movie Player"
 .
 .SH NAME
 mplayer  \- movie player
@@ -296,7 +296,7 @@ Show filename on the OSD.
 Show progression bar, elapsed time and total duration on the OSD.
 .IPs "! and @"
 Seek to the beginning of the previous/next chapter.
-.IPs "D (\-vo xvmc, \-vo vdpau, \-vf yadif, \-vf kerndeint only)"
+.IPs "D (\-vo vdpau, \-vf yadif, \-vf kerndeint only)"
 Activate/deactivate deinterlacer.
 .IPs "A"
 Cycle through the available DVD angles.
@@ -949,15 +949,13 @@ only video (you can think of that as infinite fps).
 Changes the colorkey to an RGB value of your choice.
 0x000000 is black and 0xffffff is white.
 Only supported by the cvidix, fbdev, svga, vesa, winvidix, xmga, xvidix,
-xover, xv (see \-vo xv:ck), xvmc (see \-vo xv:ck) and directx video output
-drivers.
+xover, xv (see \-vo xv:ck) and directx video output drivers.
 .
 .TP
 .B \-nocolorkey
 Disables colorkeying.
 Only supported by the cvidix, fbdev, svga, vesa, winvidix, xmga, xvidix,
-xover, xv (see \-vo xv:ck), xvmc (see \-vo xv:ck) and directx video output
-drivers.
+xover, xv (see \-vo xv:ck) and directx video output drivers.
 .
 .TP
 .B \-correct\-pts (EXPERIMENTAL)
@@ -1013,7 +1011,7 @@ values and when producing EDL file with \-edlout option, EDL records
 contain absolute values that are correct only for this particular file.
 If re-encoded into a different format, this EDL file no longer applies.
 Specifying \-edl-start-pts will automatically adjust EDL positions according
-to start time: when producing EDL file, it will substract start time from every
+to start time: when producing EDL file, it will subtract start time from every
 EDL record, when playing with EDL file, it will add file's start time to every
 EDL position.
 .
@@ -1176,9 +1174,16 @@ Print a list of the available properties.
 .
 .TP
 .B \-loop <number>
-Loops movie playback <number> times.
+Loops the playback <number> times.
+.br
 0 means forever.
-Use \-loop 0 to automatically reconnect to live streaming URLs.
+Use \-loop 0 <URL|filename> to automatically reconnect to live streaming URLs
+or files yet to be created or to be replaced.
+.br
+\-loop <number> <URL|filename> opens the URL or file <number> times in a row
+and plays it once each time, while <URL|filename> \-loop <number> opens the
+URL or file once and plays it <number> times in a loop, which is usually what
+you want.
 .
 .TP
 .B \-menu (OSD menu only)
@@ -1218,7 +1223,7 @@ Display the main menu at MPlayer startup.
 Permit MPlayer to receive pointer events reported by the video
 output driver.
 Necessary to select the buttons in DVD menus.
-Supported for X11-based VOs (x11, xv, xvmc, etc) and the gl, gl_tiled, direct3d and
+Supported for X11-based VOs (x11, xv, etc) and the gl, gl_tiled, direct3d and
 corevideo VOs.
 .
 .TP
@@ -3554,10 +3559,10 @@ y coordinates are relative to the top-left corner of the window rather
 than the screen.
 The coordinates are relative to the screen given with \-screen for
 the video output drivers that fully support \-screen (direct3d, gl, gl_tiled,
-vdpau, x11, xv, xvmc, corevideo).
+vdpau, x11, xv, corevideo).
 .br
 .I NOTE:
-This option is only supported by the x11, xmga, xv, xvmc, xvidix,
+This option is only supported by the x11, xmga, xv, xvidix,
 gl, gl_tiled, direct3d, directx, fbdev, sdl, dfxfb and corevideo
 video output drivers.
 .sp 1
@@ -3670,14 +3675,14 @@ E.g.\& \-panscanrange \-3 allows a zoom factor of up to 4.
 This feature is experimental.
 .
 .TP
-.B \-border\-pos\-x <0.0\-1.0> (-vo gl,xv,xvmc,vdpau,direct3d only, default 0.5)
+.B \-border\-pos\-x <0.0\-1.0> (-vo gl,xv,vdpau,direct3d only, default 0.5)
 When black borders are added to adjust for aspect, this determines where they are placed.
 0.0 places borders on the right, 1.0 on the left.
 Values outside the range 0.0 \- 1.0 will add extra black borders on one side
 and remove part of the image on the other side.
 .
 .TP
-.B \-border\-pos\-y <0.0\-1.0> (-vo gl,xv,xvmc,vdpau,direct3d only, default 0.5)
+.B \-border\-pos\-y <0.0\-1.0> (-vo gl,xv,vdpau,direct3d only, default 0.5)
 As \-border\-pos\-x but for top/bottom borders.
 0.0 places borders on the bottom, 1.0 on the top.
 .
@@ -3982,38 +3987,6 @@ Forces the use of the VDPAU mixer, which implements all above options (default).
 Use noforce\-mixer to allow displaying BGRA colorspace.
 (Disables all above options and the hardware equalizer
 if image format BGRA is actually used.)
-.RE
-.PD 1
-.
-.TP
-.B xvmc (X11 with FFmpeg MPEG-1/2 decoder only)
-Video output driver that uses the XvMC (X Video Motion Compensation)
-extension of XFree86 4.x to speed up MPEG-1/2 and VCR2 decoding.
-.PD 0
-.RSs
-.IPs adaptor=<number>
-Select a specific XVideo adaptor (check xvinfo results).
-.IPs port=<number>
-Select a specific XVideo port.
-.IPs (no)benchmark
-Disables image display.
-Necessary for proper benchmarking of drivers that change
-image buffers on monitor retrace only (nVidia).
-Default is not to disable image display (nobenchmark).
-.IPs (no)bobdeint
-Very simple deinterlacer.
-Might not look better than \-vf tfields=1,
-but it is the only deinterlacer for xvmc (default: nobobdeint).
-.IPs (no)queue
-Queue frames for display to allow more parallel work of the video hardware.
-May add a small (not noticeable) constant A/V desync (default: noqueue).
-.IPs (no)sleep
-Use sleep function while waiting for rendering to finish
-(not recommended on Linux) (default: nosleep).
-.IPs ck=cur|use|set
-Same as \-vo xv:ck (see \-vo xv).
-.IPs ck-method=man|bg|auto
-Same as \-vo xv:ck-method (see \-vo xv).
 .RE
 .PD 1
 .
@@ -5068,7 +5041,7 @@ Disable automatic movie aspect ratio compensation.
 .B "\-field\-dominance <\-1\-1>"
 Set first field for interlaced content.
 Useful for deinterlacers that double the framerate: \-vf tfields=1,
-\-vf yadif=1, \-vo vdpau:deint and \-vo xvmc:bobdeint.
+\-vf yadif=1 and \-vo vdpau:deint.
 .PD 0
 .RSs
 .IPs \-1
@@ -6207,7 +6180,7 @@ Changing playback speed, would change audio tempo to match.
 Would playback media at 1.2x normal speed, with audio at normal pitch,
 but changing playback speed has no effect on audio tempo.
 .IPs "mplayer \-af scaletempo=stride=30:overlap=.50:search=10 media.ogg"
-Would tweak the quality and performace parameters.
+Would tweak the quality and performance parameters.
 .IPs "mplayer \-af format=floatne,scaletempo media.ogg"
 Would make scaletempo use float code.
 Maybe faster on some platforms.
@@ -7032,7 +7005,7 @@ saturation controls in hardware.
 .RSs
 .IPs <\-180\-180>
 initial hue (default: 0.0)
-.IPs <\-100\-100>
+.IPs <\-10\-10>
 initial saturation, where negative values result
 in a negative chroma (default: 1.0)
 .RE
@@ -8999,7 +8972,7 @@ scene change detection and make libavcodec use an I-frame (default: 1).
 Values between 2 and 6 may yield increasing PSNR (up to approximately
 0.04 dB) and better placement of I-frames in high-motion scenes.
 Higher values than 6 may give very slightly better PSNR (approximately
-0.01 dB more than sc_factor=6), but noticably worse visual quality.
+0.01 dB more than sc_factor=6), but noticeably worse visual quality.
 .
 .TP
 .B vb_strategy=<0\-2> (pass one only)
@@ -11471,7 +11444,7 @@ and you have a need to set it.
 .
 .TP
 .B (no)cpu_independent
-Ensure exact reproducibility across different CPUs instead of chosing
+Ensure exact reproducibility across different CPUs instead of choosing
 different algorithms when available/better (default:enabled).
 .
 .TP
@@ -11547,7 +11520,7 @@ Specify output colorspace (default: i420).
 .
 .TP
 .B (no)aud
-Write access unit delimeters to the stream (default: disabled).
+Write access unit delimiters to the stream (default: disabled).
 Enable this only if your target container format requires access unit
 delimiters.
 .
@@ -12438,7 +12411,7 @@ explains how to create useful bug reports.
 MPlayer was initially written by Arpad Gereoffy.
 See the AUTHORS file for a list of some of the many other contributors.
 .PP
-MPlayer is (C) 2000\-2023 The MPlayer Team
+MPlayer is (C) 2000\-2026 The MPlayer Team
 .PP
 This man page was written mainly by Gabucino, Jonas Jermann and Diego Biurrun.
 It is maintained by Diego Biurrun.

@@ -51,9 +51,6 @@ static const ao_info_t info =
 
 LIBAO_EXTERN(sdl)
 
-// turn this on if you want to use the slower SDL_MixAudio
-#undef USE_SDL_INTERNAL_MIXER
-
 // Samplesize used by the SDLlib AudioSpec struct
 #if defined(__MINGW32__) || defined(__CYGWIN__) || defined(__AMIGAOS4__)
 #define SAMPLESIZE 2048
@@ -65,32 +62,19 @@ LIBAO_EXTERN(sdl)
 #define NUM_CHUNKS 8
 #define BUFFSIZE (NUM_CHUNKS * CHUNK_SIZE)
 
-static AVFifoBuffer *buffer;
-
-#ifdef USE_SDL_INTERNAL_MIXER
-static unsigned char volume=SDL_MIX_MAXVOLUME;
-#endif
+static AVFifo *buffer;
 
 static int write_buffer(unsigned char* data,int len){
-  int free = av_fifo_space(buffer);
+  int free = av_fifo_can_write(buffer);
   if (len > free) len = free;
-  return av_fifo_generic_write(buffer, data, len, NULL);
+  av_fifo_write(buffer, data, len);
+  return len;
 }
-
-#ifdef USE_SDL_INTERNAL_MIXER
-static void mix_audio(void *dst, void *src, int len) {
-  SDL_MixAudio(dst, src, len, volume);
-}
-#endif
 
 static int read_buffer(unsigned char* data,int len){
-  int buffered = av_fifo_size(buffer);
+  int buffered = av_fifo_can_read(buffer);
   if (len > buffered) len = buffered;
-#ifdef USE_SDL_INTERNAL_MIXER
-  av_fifo_generic_read(buffer, data, len, mix_audio);
-#else
-  av_fifo_generic_read(buffer, data, len, NULL);
-#endif
+  av_fifo_read(buffer, data, len);
   return len;
 }
 
@@ -99,24 +83,6 @@ static int read_buffer(unsigned char* data,int len){
 
 // to set/get/query special features/parameters
 static int control(int cmd,void *arg){
-#ifdef USE_SDL_INTERNAL_MIXER
-	switch (cmd) {
-		case AOCONTROL_GET_VOLUME:
-		{
-			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
-			vol->left = vol->right = volume * 100 / SDL_MIX_MAXVOLUME;
-			return CONTROL_OK;
-		}
-		case AOCONTROL_SET_VOLUME:
-		{
-			int diff;
-			ao_control_vol_t* vol = (ao_control_vol_t*)arg;
-			diff = (vol->left+vol->right) / 2;
-			volume = diff * SDL_MIX_MAXVOLUME / 100;
-			return CONTROL_OK;
-		}
-	}
-#endif
 	return CONTROL_UNKNOWN;
 }
 
@@ -138,7 +104,7 @@ static int init(int rate,int channels,int format,int flags){
 	SDL_AudioSpec aspec, obtained;
 
 	/* Allocate ring-buffer memory */
-	buffer = av_fifo_alloc(BUFFSIZE);
+	buffer = av_fifo_alloc2(BUFFSIZE, 1, 0);
 
 	mp_msg(MSGT_AO,MSGL_INFO,MSGTR_AO_SDL_INFO, rate, (channels > 1) ? "Stereo" : "Mono", af_fmt2str_short(format));
 
@@ -161,7 +127,11 @@ static int init(int rate,int channels,int format,int flags){
 		aspec.format = AUDIO_U8;
 	    break;
 	    case AF_FORMAT_S16_LE:
+#ifdef __AMIGAOS4__
 		aspec.format = AUDIO_S16MSB;
+#else
+#endif
+		aspec.format = AUDIO_S16LSB;
 	    break;
 	    case AF_FORMAT_S16_BE:
 		aspec.format = AUDIO_S16MSB;
@@ -176,8 +146,12 @@ static int init(int rate,int channels,int format,int flags){
 		aspec.format = AUDIO_U16MSB;
 	    break;
 	    default:
-                aspec.format = AUDIO_S16MSB;
+                aspec.format = AUDIO_S16LSB;
+#ifdef __AMIGAOS4__
                 ao_data.format = AF_FORMAT_S16_BE;
+#else
+                ao_data.format = AF_FORMAT_S16_LE;
+#endif
                 mp_msg(MSGT_AO,MSGL_WARN,MSGTR_AO_SDL_UnsupportedAudioFmt, format);
 	}
 
@@ -254,7 +228,7 @@ static void uninit(int immed){
 	  usec_sleep(get_delay() * 1000 * 1000);
 	SDL_CloseAudio();
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
-	av_fifo_free(buffer);
+	av_fifo_freep2(&buffer);
 }
 
 // stop playing and empty buffers (for seeking/pause)
@@ -264,7 +238,7 @@ static void reset(void){
 
 	SDL_PauseAudio(1);
 	/* Reset ring-buffer state */
-	av_fifo_reset(buffer);
+	av_fifo_reset2(buffer);
 	SDL_PauseAudio(0);
 }
 
@@ -287,18 +261,17 @@ static void audio_resume(void)
 
 // return: how many bytes can be played without blocking
 static int get_space(void){
-    return av_fifo_space(buffer);
+    return av_fifo_can_write(buffer);
 }
 
 // plays 'len' bytes of 'data'
 // it should round it down to outburst*n
 // return: number of bytes played
 static int play(void* data,int len,int flags){
+	int ret;
 
 	if (!(flags & AOPLAY_FINAL_CHUNK))
 	len = (len/ao_data.outburst)*ao_data.outburst;
-#if 0
-	int ret;
 
 	/* Audio locking prohibits call of outputaudio */
 	SDL_LockAudio();
@@ -307,13 +280,10 @@ static int play(void* data,int len,int flags){
 	SDL_UnlockAudio();
 
     	return ret;
-#else
-	return write_buffer(data, len);
-#endif
 }
 
 // return: delay in seconds between first and last sample in buffer
 static float get_delay(void){
-    int buffered = av_fifo_size(buffer); // could be less
+    int buffered = av_fifo_can_read(buffer); // could be less
     return (float)(buffered + abs(ao_data.buffersize))/(float)ao_data.bps;
 }

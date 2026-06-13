@@ -18,7 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef __AMIGAOS4__
 #undef _FILE_OFFSET_BITS
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

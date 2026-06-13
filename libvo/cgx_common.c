@@ -136,7 +136,7 @@ struct
 {
 	int x,y;
 	int bw,bh;
-	int w,h
+	int w,h;
 } save_window = {0,0,0,0,0,0} ;
 
 //
@@ -731,7 +731,7 @@ DBUG("_dobj = 0x%08lx (%s)\n",_dobj,fullpath_mplayer);
 	iconifyPort = (struct MsgPort *) AllocSysObject(ASOT_PORT,NULL);
 	if (iconifyPort)
 	{
-		appicon = AddAppIcon(1, 0, "MPlayer", iconifyPort, 0, _dobj,
+		appicon = AddAppIcon(1, 0, "V-MPlayer", iconifyPort, 0, _dobj,
 				WBAPPICONA_SupportsOpen, TRUE,
 			TAG_END);
 DBUG("appicon = 0x%08lx\n",appicon);
@@ -944,37 +944,7 @@ if(!use_gui)
 			switch( Class )
 			{
 				case IDCMP_INTUITICKS:
-//DBUG("IDCMP_INTUITICKS\n",NULL);
-					if (is_fullscreen) break;
-
-					if  ((IntuiMsg->Seconds - resize_sec >1)&&(IntuiMsg->Seconds - resize_sec<=2))
-					{
-						w = *window_width;
-						h = (ULONG)  ((float) *window_width / amiga_aspect_ratio);
-
-						if (My_Screen)
-						{
-//							Printf("Have My_Screen\n");
-
-							if (h > (My_Screen -> Height - My_Window -> BorderTop - My_Window ->BorderBottom))
-							{
-								h = My_Screen -> Height - My_Window -> BorderTop - My_Window ->BorderBottom;
-								w = (ULONG)  ((float) h * amiga_aspect_ratio);
-							}
-						}
-
-						if (h<50) h=50;
-						if (w<50) w=50;
-
-						if (h !=  *window_height)
-						{
-							SetWindowAttrs(My_Window,
-								WA_InnerWidth, w,
-								WA_InnerHeight, h,
-							TAG_END);
-						}
-						resize_sec = IntuiMsg->Seconds - 10;
-					}
+					/* Auto-resize disabled */
 					break;
 
 				case IDCMP_CLOSEWINDOW:
@@ -1143,6 +1113,15 @@ DBUG("  SELECTDOWN (double click)\n",NULL);
 				break;
 
 				//
+				case IDCMP_NEWSIZE:
+					/* SimpleRefresh: must call BeginRefresh/EndRefresh on resize */
+					BeginRefresh(My_Window);
+					EndRefresh(My_Window, TRUE);
+					RefreshWindowFrame(My_Window);
+					retval = TRUE;
+				break;
+
+				//
 				case IDCMP_CHANGEWINDOW:
 					*window_left = My_Window->LeftEdge;
 					*window_top  = My_Window->TopEdge;
@@ -1205,11 +1184,11 @@ DBUG("  SELECTDOWN (double click)\n",NULL);
 				case IDCMP_EXTENDEDMOUSE:
 					if (mouse_wheel -> WheelY < 0)
 					{
-						mplayer_put_key(KEY_RIGHT); break;
+						mplayer_put_key(MOUSE_BTN3); break;
 					}
 					else	if (mouse_wheel->WheelY>0)
 					{
-						mplayer_put_key(KEY_LEFT); break;
+						mplayer_put_key(MOUSE_BTN4); break;
 					}
 					break;
 				#endif
