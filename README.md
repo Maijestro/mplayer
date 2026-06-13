@@ -1,5 +1,12 @@
 # MPlayer for AmigaOS 4.1 - VA-API Hardware Acceleration
-### Fork by Maijestro | Based on [smarkusg/mplayer](https://github.com/smarkusg/mplayer)
+### By Maijestro | Based on MPlayer SVN trunk r38685
+
+Base source: svn://svn.mplayerhq.hu/mplayer/trunk revision 38685
+
+The GitHub repository [smarkusg/mplayer](https://github.com/smarkusg/mplayer)
+was used as the fork base. Parts of the AmigaOS4 patches from that repository
+were also incorporated. The actual build however is based on the official
+MPlayer SVN trunk at revision 38685 with additional AmigaOS4-specific changes.
 
 Full VA-API hardware accelerated video decoding and output for AmigaOS 4.1,
 using va.library and FFmpeg hwaccel integration.
@@ -159,4 +166,5 @@ https://www.paypal.me/Maijestro
 ## License
 
 GPL v2 - see LICENSE file for details.
-Original: https://github.com/smarkusg/mplayer
+Original MPlayer SVN: svn://svn.mplayerhq.hu/mplayer/trunk r38685
+GitHub fork base: https://github.com/smarkusg/mplayer
