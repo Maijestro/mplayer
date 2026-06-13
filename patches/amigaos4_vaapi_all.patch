@@ -1,0 +1,2242 @@
+Index: /opt/code/mplayer-cvs/.gitignore
+===================================================================
+--- /opt/code/mplayer-cvs/.gitignore	(revision 38685)
++++ /opt/code/mplayer-cvs/.gitignore	(working copy)
+@@ -1,59 +1,18 @@
+-*.[od]
+-*.exe
+-*.ho
+-codec-cfg
+-codec-cfg-test
+-codecs2html
+-codecs.conf.h
+-config.*
+-cpuinfo
+-ffmpeg
+-gmplayer
+-help_mp.h
+-mencoder
+-mplayer
+-tags
+-TAGS
++# Binaries
++mplayer_vaapi_hw_*
++vainfo_aos4
++
++# Object files
++*.o
++*.d
++*.a
++
++# FFmpeg (has its own repo)
++ffmpeg/
++
++# Build artifacts
++objs.lst
++objs_existing.lst
++config.log
++config.mak
+ version.h
+-debian/changelog
+-debian/files
+-debian/mplayer-dbg/
+-debian/mplayer-doc/
+-debian/mplayer-gui/
+-debian/*.debhelper
+-debian/*.debhelper.log
+-debian/*.substvars
+-DOCS/codecs-status.html
+-DOCS/HTML/
+-DOCS/HTML-single/
+-DOCS/tech/doxygen
+-DOCS/xml/html-chunk.xsl
+-DOCS/xml/html-single.xsl
+-DOCS/xml/xml.mak
+-DOCS/xml/*/main.xml
+-drivers/mga_vid_test
+-drivers/tdfx_vid_test
+-ffmpeg/
+-libdvdnav/
+-libdvdread4/
+-libvo/aspecttest
+-loader/qtx/list
+-loader/qtx/qtxload
+-TOOLS/alaw-gen
+-TOOLS/alaw.dat
+-TOOLS/alaw.out
+-TOOLS/asfinfo
+-TOOLS/avi-fix
+-TOOLS/avisubdump
+-TOOLS/bmovl-test
+-TOOLS/compare
+-TOOLS/cpuinfo
+-TOOLS/dump_mp4
+-TOOLS/fastmemcpybench
+-TOOLS/modify_reg
+-TOOLS/movinfo
+-TOOLS/netstream
+-TOOLS/subrip
+-TOOLS/vivodump
+-vidix/pci_*.[ch]
+-vidix/dhahelperwin/dhahelper.sys
+Index: /opt/code/mplayer-cvs/Makefile
+===================================================================
+--- /opt/code/mplayer-cvs/Makefile	(revision 38685)
++++ /opt/code/mplayer-cvs/Makefile	(working copy)
+@@ -441,7 +441,7 @@
+               sub/subreader.c                   \
+               sub/vobsub.c                      \
+               $(SRCS_COMMON-yes)                \
+-              $(OS_FEATURE-no)
++              $(OS_FEATURE-yes)
+ 
+ # MPlayer
+ SRCS_MPLAYER-$(3DFX)         += libvo/vo_3dfx.c
+@@ -546,6 +546,24 @@
+ SRCS_MPLAYER-$(SDL)           += libao2/ao_sdl.c                        \
+                                  libvo/vo_sdl.c                         \
+                                  libvo/sdl_common.c
++
++SRCS_MPLAYER-yes          += amigaos/amigaos_stuff.c \
++                             amigaos/arexx.c \
++                             amigaos/menu.c \
++                             amigaos/appwindow.c \
++                             amigaos/workaround_snapshot.c \
++                             amigaos/asm.c \
++                             amigaos/window_icons.c \
++                             libvo/cgx_common.c \
++                             libvo/memcpy.c \
++                             libvo/vo_cgx_wpa.c \
++                             libvo/vo_comp.c \
++                             libvo/vo_comp_yuv.c \
++                             libvo/vo_comp_yuv2.c \
++                             libvo/vo_p96pip.c \
++                             libvo/vo_amiga.c \
++                             libvo/vo_vaapi.c \
++                             libao2/ao_ahi_dev2.c
+ SRCS_MPLAYER-$(SGIAUDIO)      += libao2/ao_sgi.c
+ SRCS_MPLAYER-$(SNDIO)         += libao2/ao_sndio.c
+ SRCS_MPLAYER-$(SUNAUDIO)      += libao2/ao_sun.c
+@@ -555,6 +573,7 @@
+ SRCS_MPLAYER-$(TGA)           += libvo/vo_tga.c
+ SRCS_MPLAYER-$(V4L2)          += libvo/vo_v4l2.c
+ SRCS_MPLAYER-$(V4L2)          += libao2/ao_v4l2.c
++SRCS_MPLAYER-$(VAAPI)         += libvo/vo_vaapi.c
+ SRCS_MPLAYER-$(VDPAU)         += libvo/vo_vdpau.c
+ SRCS_MPLAYER-$(VESA)          += libvo/gtf.c                            \
+                                  libvo/vo_vesa.c                        \
+@@ -739,7 +758,7 @@
+ 
+ ffmpeglibs: $(FFMPEGLIBS)
+ 
+-$(FFMPEGLIBS): $(FFMPEGFILES) config.h
++$(FFMPEGLIBS): config.h
+ 	$(MAKE) -C ffmpeg $(@:ffmpeg/%=%)
+ 
+ mencoder$(EXESUF): $(MENCODER_DEPS)
+Index: /opt/code/mplayer-cvs/codec-cfg.c
+===================================================================
+--- /opt/code/mplayer-cvs/codec-cfg.c	(revision 38685)
++++ /opt/code/mplayer-cvs/codec-cfg.c	(working copy)
+@@ -262,6 +262,13 @@
+     {"VDPAU_MPEG4", IMGFMT_VDPAU_MPEG4},
+     {"VDPAU_HEVC",  IMGFMT_VDPAU_HEVC},
+ 
++    {"VAAPI_MPEG2", IMGFMT_VAAPI_MPEG2},
++    {"VAAPI_H264",  IMGFMT_VAAPI_H264},
++    {"VAAPI_WMV3",  IMGFMT_VAAPI_WMV3},
++    {"VAAPI_VC1",   IMGFMT_VAAPI_VC1},
++    {"VAAPI_MPEG4", IMGFMT_VAAPI_MPEG4},
++    {"VAAPI_HEVC",  IMGFMT_VAAPI_HEVC},
++
+     {NULL,    0}
+ };
+ 
+Index: /opt/code/mplayer-cvs/command.c
+===================================================================
+--- /opt/code/mplayer-cvs/command.c	(revision 38685)
++++ /opt/code/mplayer-cvs/command.c	(working copy)
+@@ -3371,7 +3371,7 @@
+             break;
+ 
+         case MP_CMD_RUN:
+-#ifndef __MINGW32__
++#if !defined(__MINGW32__) && !defined(__AMIGAOS4__)
+             if (!fork()) {
+                 char *exp_cmd = property_expand_string(mpctx, cmd->args[0].v.s);
+                 if (exp_cmd) {
+Index: /opt/code/mplayer-cvs/configure
+===================================================================
+--- /opt/code/mplayer-cvs/configure	(revision 38685)
++++ /opt/code/mplayer-cvs/configure	(working copy)
+@@ -500,6 +500,7 @@
+   --enable-xv              enable Xv video output [autodetect]
+   --enable-vda             enable VDA acceleration [autodetect]
+   --enable-vdpau           enable VDPAU acceleration [autodetect]
++  --enable-vaapi           enable VAAPI acceleration [autodetect]
+   --enable-vm              enable XF86VidMode support [autodetect]
+   --enable-xinerama        enable Xinerama support [autodetect]
+   --enable-x11             enable X11 video output [autodetect]
+@@ -699,6 +700,7 @@
+ _xv=auto
+ _vda=auto
+ _vdpau=auto
++_vaapi=auto
+ _sdl=auto
+ _kva=auto
+ _direct3d=auto
+@@ -1048,6 +1050,8 @@
+   --disable-vda)        _vda=no         ;;
+   --enable-vdpau)       _vdpau=yes      ;;
+   --disable-vdpau)      _vdpau=no       ;;
++  --enable-vaapi)       _vaapi=yes      ;;
++  --disable-vaapi)      _vaapi=no       ;;
+   --enable-sdl)         _sdl=yes        ;;
+   --disable-sdl)        _sdl=no         ;;
+   --enable-kva)         _kva=yes        ;;
+@@ -1527,19 +1531,19 @@
+     exit 1
+ fi
+ 
+-FFBRANCH="release/7.1"
+-test -e FFBRANCH && FFBRANCH=$(cat FFBRANCH)
+-
+-if test -e ffmpeg/mp_auto_pull ; then
+-    cfg_fetch="remote.origin.fetch=+refs/heads/$FFBRANCH:refs/remotes/origin/$FFBRANCH"
+-    echo "Updating FFmpeg, (re)move ffmpeg/mp_auto_pull to disable"
+-    (cd ffmpeg && git -c "$cfg_fetch" fetch --depth 1 origin && git -c "$cfg_fetch" checkout $FFBRANCH)
+-    if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
+-        echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
+-        exit 1
+-    fi
+-fi
+-
++#FFBRANCH="release/7.1"
++#test -e FFBRANCH && FFBRANCH=$(cat FFBRANCH)
++#
++#if test -e ffmpeg/mp_auto_pull ; then
++#    cfg_fetch="remote.origin.fetch=+refs/heads/$FFBRANCH:refs/remotes/origin/$FFBRANCH"
++#    echo "Updating FFmpeg, (re)move ffmpeg/mp_auto_pull to disable"
++#    (cd ffmpeg && git -c "$cfg_fetch" fetch --depth 1 origin && git -c "$cfg_fetch" checkout $FFBRANCH)
++#    if ! (cd ffmpeg && git pull --rebase --ff-only) ; then
++#        echo "git pull failed, (re)move ffmpeg/mp_auto_pull to disable pulling"
++#        exit 1
++#    fi
++#fi
++#
+ if test "$ffmpeg_a" != "no" && ! test -e ffmpeg ; then
+     echo "No FFmpeg checkout, press enter to download one with git or CTRL+C to abort"
+     read tmp
+@@ -5103,6 +5107,26 @@
+ echores "$_vdpau"
+ 
+ 
++echocheck "VAAPI"
++if test "$_vaapi" = auto && test "$_x11" = yes ; then
++  _vaapi=no
++  if test "$_dl" = yes ; then
++    statement_check va/va_x11.h 'vaGetDisplay(0)' -lva -lva-x11 && _vaapi=yes
++  fi
++fi
++if test "$_vaapi" = yes ; then
++  def_vaapi='#define CONFIG_VAAPI 1'
++  libs_mplayer="$libs_mplayer -lva -lva-x11"
++  vomodules="vaapi $vomodules"
++  libavhwaccels="$libavhwaccels H263_VAAPI_HWACCEL H264_VAAPI_HWACCEL HEVC_VAAPI_HWACCEL MPEG2_VAAPI_HWACCEL MPEG4_VAAPI_HWACCEL VC1_VAAPI_HWACCEL WMV3_VAAPI_HWACCEL"
++else
++  def_vaapi='#define CONFIG_VAAPI 0'
++  novomodules="vaapi $novomodules"
++  libavdecoders=$(filter_out_component decoder '[A-Z0-9]*_VAAPI')
++fi
++echores "$_vaapi"
++
++
+ echocheck "Xinerama"
+ if test "$_xinerama" = auto && test "$_x11" = yes ; then
+   _xinerama=no
+@@ -8839,6 +8863,7 @@
+ VCD = $_vcd
+ VDA = $_vda
+ VDPAU = $_vdpau
++VAAPI = $_vaapi
+ VESA = $_vesa
+ VIDIX = $_vidix
+ VIDIX_PCIDB = $_vidix_pcidb_val
+@@ -9046,6 +9071,7 @@
+ CONFIG_VF_LAVFI = $_vf_lavfi
+ CONFIG_VDA      = $_vda
+ CONFIG_VDPAU    = $_vdpau
++CONFIG_VAAPI    = $_vaapi
+ CONFIG_ZLIB     = $_zlib
+ 
+ HAVE_GNU_AS     = $gnu_as
+@@ -9431,6 +9457,7 @@
+ $def_tga
+ $def_v4l2
+ $def_vdpau
++$def_vaapi
+ $def_vesa
+ $def_vidix
+ $def_vidix_drv_cyberblade
+@@ -9600,7 +9627,6 @@
+ #define CONFIG_SWSCALE_ALPHA 1
+ #define SWS_MAX_FILTER_SIZE 256
+ #define CONFIG_QSV 0
+-#define CONFIG_VAAPI 0
+ #define CONFIG_VALGRIND_BACKTRACE 0
+ 
+ /* related to HW accelarations */
+Index: /opt/code/mplayer-cvs/etc/codecs.conf
+===================================================================
+--- /opt/code/mplayer-cvs/etc/codecs.conf	(revision 38685)
++++ /opt/code/mplayer-cvs/etc/codecs.conf	(working copy)
+@@ -500,6 +500,7 @@
+   dll "mpeg2video"
+   out YV12,I420,IYUV
+   out 422P,444P
++  out VAAPI_MPEG2
+ 
+ ; for backward compatibility
+ videocodec ffmpeg12
+@@ -1334,6 +1335,7 @@
+   driver ffmpeg
+   dll wmv3
+   out YV12,I420,IYUV
++  out VAAPI_WMV3
+ 
+ videocodec ffwvp2
+   info "FFmpeg WVP2"
+@@ -1375,6 +1377,7 @@
+   driver ffmpeg
+   dll vc1
+   out YV12,I420,IYUV
++  out VAAPI_VC1
+ 
+ videocodec ffvc1vdpau
+   info "FFmpeg WVC1 (VDPAU)"
+@@ -1430,6 +1433,7 @@
+   out 422P,422P9,422P10,444P12
+   out 444P,444P9,444P10,444P12
+   out GBR24P,GBR10P,GBR12P
++  out VAAPI_HEVC
+ 
+ videocodec ffhevcvdpau
+   info "FFmpeg HEVC / H.265 (VDPAU)"
+@@ -1465,6 +1469,7 @@
+   out 422P,422P9,422P10,444P12,444P14
+   out 444P,444P9,444P10,444P12,444P14
+   out GBR24P,GBR12P,GBR14P
++  out VAAPI_H264
+ 
+ videocodec ffh264vdpau
+   info "FFmpeg H.264 (VDPAU)"
+@@ -1592,6 +1597,7 @@
+   driver ffmpeg
+   dll mpeg4 ;opendivx
+   out YV12,I420,IYUV
++  out VAAPI_MPEG4
+ 
+ videocodec ffodivxvdpau
+   info "FFmpeg MPEG-4,DIVX-4/5 (VDPAU)"
+Index: /opt/code/mplayer-cvs/fmt-conversion.c
+===================================================================
+--- /opt/code/mplayer-cvs/fmt-conversion.c	(revision 38685)
++++ /opt/code/mplayer-cvs/fmt-conversion.c	(working copy)
+@@ -146,6 +146,7 @@
+     int i;
+     enum AVPixelFormat pix_fmt;
+     if (IMGFMT_IS_VDPAU(fmt)) return AV_PIX_FMT_VDPAU;
++    if (IMGFMT_IS_VAAPI(fmt)) return AV_PIX_FMT_VAAPI;
+     for (i = 0; conversion_map[i].fmt; i++)
+         if (conversion_map[i].fmt == fmt)
+             break;
+Index: /opt/code/mplayer-cvs/input/input.c
+===================================================================
+--- /opt/code/mplayer-cvs/input/input.c	(revision 38685)
++++ /opt/code/mplayer-cvs/input/input.c	(working copy)
+@@ -71,7 +71,7 @@
+ /// For the args, the first field is the type (actually int, float or string), the second
+ /// is the default value which is used for optional arguments
+ 
+-static const mp_cmd_t mp_cmds[] = {
++const mp_cmd_t mp_cmds[] = {
+ #ifdef CONFIG_RADIO
+   { MP_CMD_RADIO_STEP_CHANNEL, "radio_step_channel", 1,  { { MP_CMD_ARG_INT ,{0}}, {-1,{0}} }},
+   { MP_CMD_RADIO_SET_CHANNEL, "radio_set_channel", 1, { { MP_CMD_ARG_STRING, {0}}, {-1,{0}}  }},
+@@ -385,8 +385,8 @@
+   // Ignore modifiers by default
+   { { KEY_CTRL, 0 }, "ignore" },
+ 
+-  { {  MOUSE_BTN3, 0 }, "seek 10" },
+-  { {  MOUSE_BTN4, 0 }, "seek -10" },
++  { {  MOUSE_BTN3, 0 }, "volume 5" },
++  { {  MOUSE_BTN4, 0 }, "volume -5" },
+   { {  MOUSE_BTN5, 0 }, "volume 1" },
+   { {  MOUSE_BTN6, 0 }, "volume -1" },
+ 
+@@ -422,7 +422,7 @@
+   { { KEY_HOME, 0 }, "pt_up_step 1" },
+   { { KEY_END, 0 }, "pt_up_step -1" },
+   { { '>', 0 }, "pt_step 1" },
+-  { { KEY_ENTER, 0 }, "pt_step 1 1" },
++  { { KEY_ENTER, 0 }, "vo_fullscreen" },
+   { { '<', 0 }, "pt_step -1" },
+   { { KEY_INS, 0 }, "alt_src_step 1" },
+   { { KEY_DEL, 0 }, "alt_src_step -1" },
+@@ -1273,6 +1273,21 @@
+ 	    }
+ 	    else
+ 		time_val = NULL;
++#ifdef __AMIGAOS4__
++            if (select(max_fd + 1, &fds, NULL, NULL, time_val) == -1) {
++                if ((errno != EINTR)&&(errno != 0))
++                {
++                    mp_msg(MSGT_INPUT, MSGL_ERR, MSGTR_INPUT_INPUT_ErrSelect,    strerror(errno));
++                        mp_msg(MSGT_INPUT,"AmigaOS 4.1 Bug select() don't reset or set errno value\n",0);
++                        errno = 0;
++                }
++                else if ((errno == 0))
++                {
++                        mp_msg(MSGT_INPUT, "Select() returns without setting errno\n",0);
++                }
++                FD_ZERO(&fds);
++            }
++#else
+ 	    if (select(max_fd + 1, &fds, NULL, NULL, time_val) < 0) {
+ 		if (errno != EINTR)
+ 		    mp_msg(MSGT_INPUT, MSGL_ERR, MSGTR_INPUT_INPUT_ErrSelect,
+@@ -1279,6 +1294,7 @@
+ 			    strerror(errno));
+ 		FD_ZERO(&fds);
+ 	    }
++#endif
+ 	} else if (time)
+ 	    usec_sleep(time * 1000);
+     }
+Index: /opt/code/mplayer-cvs/libaf/af.c
+===================================================================
+--- /opt/code/mplayer-cvs/libaf/af.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libaf/af.c	(working copy)
+@@ -69,9 +69,7 @@
+    &af_info_pan,
+    &af_info_surround,
+    &af_info_sub,
+-#if HAVE_SYS_MMAN_H
+    &af_info_export,
+-#endif
+    &af_info_volnorm,
+    &af_info_extrastereo,
+ #ifdef CONFIG_FFMPEG
+Index: /opt/code/mplayer-cvs/libaf/af_export.c
+===================================================================
+--- /opt/code/mplayer-cvs/libaf/af_export.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libaf/af_export.c	(working copy)
+@@ -1,29 +1,6 @@
+ /*
+- * This audio filter exports the incoming signal to other processes
+- * using memory mapping. The memory mapped area contains a header:
+- *   int nch,
+- *   int size,
+- *   unsigned long long counter (updated every time the  contents of
+- *                               the area changes),
+- * the rest is payload (non-interleaved).
+- *
+- * This file is part of MPlayer.
+- *
+- * MPlayer is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * MPlayer is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License along
+- * with MPlayer; if not, write to the Free Software Foundation, Inc.,
+- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ * af_export.c - AmigaOS4 patched version using file I/O instead of mmap
+  */
+-
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -30,245 +7,206 @@
+ #include <inttypes.h>
+ #include <unistd.h>
+ #include "config.h"
+-
++#ifndef __amigaos4__
+ #include <sys/types.h>
+ #include <sys/mman.h>
+-#include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+-
++#endif
+ #include "mp_msg.h"
+ #include "path.h"
+ #include "af.h"
+ 
+-#define DEF_SZ 512 // default buffer size (in samples)
+-#define SHARED_FILE "mplayer-af_export" /* default file name
+-					   (relative to ~/.mplayer/ */
+-
++#define DEF_SZ 512
++#define SHARED_FILE "mplayer-af_export"
+ #define SIZE_HEADER (2 * sizeof(int) + sizeof(unsigned long long))
+ 
+-// Data for specific instances of this filter
+-typedef struct af_export_s
+-{
+-  unsigned long long  count; // Used for sync
+-  void* buf[AF_NCH]; 	// Buffers for storing the data before it is exported
+-  int 	sz;	      	// Size of buffer in samples
+-  int 	wi;  		// Write index
+-  int	fd;           	// File descriptor to shared memory area
+-  char* filename;      	// File to export data
+-  uint8_t *mmap_area;  	// MMap shared area
++typedef struct af_export_s {
++  unsigned long long count;
++  void* buf[AF_NCH];
++  int sz;
++  int wi;
++#ifdef __amigaos4__
++  FILE* vis_file;
++#else
++  int fd;
++  uint8_t *mmap_area;
++#endif
++  char* filename;
+ } af_export_t;
+ 
+-
+-/* Initialization and runtime control
+-   af audio filter instance
+-   cmd control command
+-   arg argument
+-*/
+ static int control(struct af_instance_s* af, int cmd, void* arg)
+ {
+   af_export_t* s = af->setup;
+-  switch (cmd){
+-  case AF_CONTROL_REINIT:{
+-    int i=0;
++  switch (cmd) {
++  case AF_CONTROL_REINIT: {
++    int i = 0;
++#ifndef __amigaos4__
+     int mapsize;
+-
+-    // Free previous buffers
++#endif
+     free(s->buf[0]);
+-
+-    // unmap previous area
+-    if(s->mmap_area)
+-      munmap(s->mmap_area, SIZE_HEADER + (af->data->bps*s->sz*af->data->nch));
+-    // close previous file descriptor
+-    if(s->fd)
+-      close(s->fd);
+-
+-    // Accept only int16_t as input format (which sucks)
++#ifdef __amigaos4__
++    if (s->vis_file) { fclose(s->vis_file); s->vis_file = NULL; }
++#else
++    if (s->mmap_area)
++      munmap(s->mmap_area, SIZE_HEADER + (af->data->bps * s->sz * af->data->nch));
++    if (s->fd) close(s->fd);
++#endif
+     af->data->rate   = ((af_data_t*)arg)->rate;
+     af->data->nch    = ((af_data_t*)arg)->nch;
+     af->data->format = AF_FORMAT_S16_NE;
+     af->data->bps    = 2;
+-
+-    // If buffer length isn't set, set it to the default value
+-    if(s->sz == 0)
+-      s->sz = DEF_SZ;
+-
+-    // Allocate new buffers (as one continuous block)
+-    s->buf[0] = calloc(s->sz*af->data->nch, af->data->bps);
+-    if(NULL == s->buf[0])
++    if (s->sz == 0) s->sz = DEF_SZ;
++    s->buf[0] = calloc(s->sz * af->data->nch, af->data->bps);
++    if (NULL == s->buf[0])
+       mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Out of memory\n");
+-    for(i = 1; i < af->data->nch; i++)
+-      s->buf[i] = (uint8_t *)s->buf[0] + i*s->sz*af->data->bps;
+-
+-    // Init memory mapping
++    for (i = 1; i < af->data->nch; i++)
++      s->buf[i] = (uint8_t *)s->buf[0] + i * s->sz * af->data->bps;
++    mp_msg(MSGT_AFILTER, MSGL_INFO, "[export] Exporting to: %s\n", s->filename);
++#ifdef __amigaos4__
++    s->vis_file = fopen(s->filename, "wb");
++    if (!s->vis_file) {
++      mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Cannot open: %s\n", s->filename);
++      return AF_ERROR;
++    }
++    {
++      int h1 = af->data->nch;
++      int h2 = s->sz * af->data->bps * af->data->nch;
++      unsigned long long h3 = 0;
++      fwrite(&h1, sizeof(int), 1, s->vis_file);
++      fwrite(&h2, sizeof(int), 1, s->vis_file);
++      fwrite(&h3, sizeof(unsigned long long), 1, s->vis_file);
++      fflush(s->vis_file);
++    }
++    mp_msg(MSGT_AFILTER, MSGL_INFO, "[export] AmigaOS4 ready: %s\n", s->filename);
++#else
+     s->fd = open(s->filename, O_RDWR | O_CREAT | O_TRUNC, 0640);
+-    mp_msg(MSGT_AFILTER, MSGL_INFO, "[export] Exporting to file: %s\n", s->filename);
+-    if(s->fd < 0) {
+-      mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Could not open/create file: %s\n",
+-	     s->filename);
++    if (s->fd < 0) {
++      mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Cannot open: %s\n", s->filename);
+       return AF_ERROR;
+     }
+-
+-    // header + buffer
+-    mapsize = (SIZE_HEADER + (af->data->bps * s->sz * af->data->nch));
+-
+-    // grow file to needed size
+-    for(i = 0; i < mapsize; i++){
+-      char null = 0;
+-      write(s->fd, (void*) &null, 1);
+-    }
+-
+-    // mmap size
+-    s->mmap_area = mmap(0, mapsize, PROT_READ|PROT_WRITE,MAP_SHARED, s->fd, 0);
+-    if(s->mmap_area == NULL)
+-      mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Could not mmap file %s\n", s->filename);
+-    mp_msg(MSGT_AFILTER, MSGL_INFO, "[export] Memory mapped to file: %s (%p)\n",
+-	   s->filename, s->mmap_area);
+-
+-    // Initialize header
++    mapsize = SIZE_HEADER + (af->data->bps * s->sz * af->data->nch);
++    for (i = 0; i < mapsize; i++) { char null = 0; write(s->fd, &null, 1); }
++    s->mmap_area = mmap(0, mapsize, PROT_READ|PROT_WRITE, MAP_SHARED, s->fd, 0);
++    if (s->mmap_area == NULL)
++      mp_msg(MSGT_AFILTER, MSGL_FATAL, "[export] Cannot mmap: %s\n", s->filename);
+     *((int*)s->mmap_area) = af->data->nch;
+     *((int*)s->mmap_area + 1) = s->sz * af->data->bps * af->data->nch;
+     msync(s->mmap_area, mapsize, MS_ASYNC);
+-
+-    // Use test_output to return FALSE if necessary
++#endif
+     return af_test_output(af, (af_data_t*)arg);
+   }
+-  case AF_CONTROL_COMMAND_LINE:{
+-    int i=0;
++  case AF_CONTROL_COMMAND_LINE: {
++    int i = 0;
+     char *str = arg;
+-
+-    if (!str){
+-      free(s->filename);
+-
+-      s->filename = get_path(SHARED_FILE);
+-      return AF_OK;
+-    }
+-
+-    while((str[i]) && (str[i] != ':'))
+-      i++;
+-
++    if (!str) { free(s->filename); s->filename = get_path(SHARED_FILE); return AF_OK; }
++#ifdef __amigaos4__
++    /* AmigaOS4: skip volume colon e.g. T: */
++    while (str[i] && str[i] != ':') i++;
++    if (str[i] == ':') i++;
++    while (str[i] && str[i] != ':') i++;
++#else
++    while (str[i] && str[i] != ':') i++;
++#endif
+     free(s->filename);
+-
+     s->filename = calloc(i + 1, 1);
+     memcpy(s->filename, str, i);
+     s->filename[i] = 0;
+-
+-    sscanf(str + i + 1, "%d", &(s->sz));
+-
++    sscanf(str + i + 1, "%d", &s->sz);
+     return af->control(af, AF_CONTROL_EXPORT_SZ | AF_CONTROL_SET, &s->sz);
+   }
+   case AF_CONTROL_EXPORT_SZ | AF_CONTROL_SET:
+-    s->sz = * (int *) arg;
+-    if((s->sz <= 0) || (s->sz > 2048))
+-      mp_msg(MSGT_AFILTER, MSGL_ERR, "[export] Buffer size must be between"
+-	      " 1 and 2048\n" );
+-
++    s->sz = *(int *)arg;
++    if (s->sz <= 0 || s->sz > 2048)
++      mp_msg(MSGT_AFILTER, MSGL_ERR, "[export] Size must be 1-2048\n");
+     return AF_OK;
+   case AF_CONTROL_EXPORT_SZ | AF_CONTROL_GET:
+-    *(int*) arg = s->sz;
++    *(int*)arg = s->sz;
+     return AF_OK;
+-
+   }
+   return AF_UNKNOWN;
+ }
+ 
+-/* Free allocated memory and clean up other stuff too.
+-   af audio filter instance
+-*/
+-static void uninit( struct af_instance_s* af )
++static void uninit(struct af_instance_s* af)
+ {
+   free(af->data);
+   af->data = NULL;
+-
+-  if(af->setup){
++  if (af->setup) {
+     af_export_t* s = af->setup;
+     free(s->buf[0]);
+-
+-    // Free mmaped area
+-    if(s->mmap_area)
+-      munmap(s->mmap_area, sizeof(af_export_t));
+-
+-    if(s->fd > -1)
+-      close(s->fd);
+-
++#ifdef __amigaos4__
++    if (s->vis_file) { fclose(s->vis_file); s->vis_file = NULL; }
++#else
++    if (s->mmap_area) munmap(s->mmap_area, sizeof(af_export_t));
++    if (s->fd > -1) close(s->fd);
++#endif
+     free(s->filename);
+-
+     free(af->setup);
+     af->setup = NULL;
+   }
+ }
+ 
+-/* Filter data through filter
+-   af audio filter instance
+-   data audio data
+-*/
+-static af_data_t* play( struct af_instance_s* af, af_data_t* data )
++static af_data_t* play(struct af_instance_s* af, af_data_t* data)
+ {
+-  af_data_t*   	c   = data;	     // Current working data
+-  af_export_t* 	s   = af->setup;     // Setup for this instance
+-  int16_t* 	a   = c->audio;	     // Incomming sound
+-  int 		nch = c->nch;	     // Number of channels
+-  int		len = c->len/c->bps; // Number of sample in data chunk
+-  int 		sz  = s->sz;         // buffer size (in samples)
+-  int 		flag = 0;	     // Set to 1 if buffer is filled
++  af_data_t*   c   = data;
++  af_export_t* s   = af->setup;
++  int16_t*     a   = c->audio;
++  int          nch = c->nch;
++  int          len = c->len / c->bps;
++  int          sz  = s->sz;
++  int          flag = 0;
++  int          ch, i;
+ 
+-  int 		ch, i;
+-
+-  // Fill all buffers
+-  for(ch = 0; ch < nch; ch++){
+-    int 	wi = s->wi;    	 // Reset write index
+-    int16_t* 	b  = s->buf[ch]; // Current buffer
+-
+-    // Copy data to export buffers
+-    for(i = ch; i < len; i += nch){
++  for (ch = 0; ch < nch; ch++) {
++    int wi = s->wi;
++    int16_t* b = s->buf[ch];
++    for (i = ch; i < len; i += nch) {
+       b[wi++] = a[i];
+-      if(wi >= sz){ // Don't write outside the end of the buffer
+-	flag = 1;
+-	break;
+-      }
++      if (wi >= sz) { flag = 1; break; }
+     }
+     s->wi = wi % s->sz;
+   }
+ 
+-  // Export buffer to mmaped area
+-  if(flag){
+-    // update buffer in mapped area
++  if (flag) {
++#ifdef __amigaos4__
++    if (s->vis_file) {
++      int h1 = nch;
++      int h2 = sz * c->bps * nch;
++      s->count++;
++      rewind(s->vis_file);
++      fwrite(&h1, sizeof(int), 1, s->vis_file);
++      fwrite(&h2, sizeof(int), 1, s->vis_file);
++      fwrite(&s->count, sizeof(unsigned long long), 1, s->vis_file);
++      fwrite(s->buf[0], c->bps * nch, sz, s->vis_file);
++      fflush(s->vis_file);
++    }
++#else
+     memcpy(s->mmap_area + SIZE_HEADER, s->buf[0], sz * c->bps * nch);
+-    s->count++; // increment counter (to sync)
+-    memcpy(s->mmap_area + SIZE_HEADER - sizeof(s->count),
+-	   &(s->count), sizeof(s->count));
++    s->count++;
++    memcpy(s->mmap_area + SIZE_HEADER - sizeof(s->count), &s->count, sizeof(s->count));
++#endif
+   }
+-
+-  // We don't modify data, just export it
+   return data;
+ }
+ 
+-/* Allocate memory and set function pointers
+-   af audio filter instance
+-   returns AF_OK or AF_ERROR
+-*/
+-static int af_open( af_instance_t* af )
++static int af_open(af_instance_t* af)
+ {
+   af->control = control;
+   af->uninit  = uninit;
+   af->play    = play;
+-  af->mul=1;
+-  af->data    = calloc(1, sizeof(af_data_t));
+-  af->setup   = calloc(1, sizeof(af_export_t));
+-  if((af->data == NULL) || (af->setup == NULL))
+-    return AF_ERROR;
+-
++  af->mul = 1;
++  af->data  = calloc(1, sizeof(af_data_t));
++  af->setup = calloc(1, sizeof(af_export_t));
++  if (!af->data || !af->setup) return AF_ERROR;
+   ((af_export_t *)af->setup)->filename = get_path(SHARED_FILE);
+-
+   return AF_OK;
+ }
+ 
+-// Description of this filter
+ const af_info_t af_info_export = {
+-    "Sound export filter",
+-    "export",
+-    "Anders; Gustavo Sverzut Barbieri <gustavo.barbieri@ic.unicamp.br>",
+-    "",
+-    AF_FLAGS_REENTRANT,
+-    af_open
++  "Sound export filter",
++  "export",
++  "Anders; Gustavo Sverzut Barbieri",
++  "",
++  AF_FLAGS_REENTRANT,
++  af_open
+ };
+Index: /opt/code/mplayer-cvs/libao2/ao_sdl.c
+===================================================================
+--- /opt/code/mplayer-cvs/libao2/ao_sdl.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libao2/ao_sdl.c	(working copy)
+@@ -127,6 +127,10 @@
+ 		aspec.format = AUDIO_U8;
+ 	    break;
+ 	    case AF_FORMAT_S16_LE:
++#ifdef __AMIGAOS4__
++		aspec.format = AUDIO_S16MSB;
++#else
++#endif
+ 		aspec.format = AUDIO_S16LSB;
+ 	    break;
+ 	    case AF_FORMAT_S16_BE:
+@@ -143,7 +147,11 @@
+ 	    break;
+ 	    default:
+                 aspec.format = AUDIO_S16LSB;
++#ifdef __AMIGAOS4__
++                ao_data.format = AF_FORMAT_S16_BE;
++#else
+                 ao_data.format = AF_FORMAT_S16_LE;
++#endif
+                 mp_msg(MSGT_AO,MSGL_WARN,MSGTR_AO_SDL_UnsupportedAudioFmt, format);
+ 	}
+ 
+@@ -277,5 +285,5 @@
+ // return: delay in seconds between first and last sample in buffer
+ static float get_delay(void){
+     int buffered = av_fifo_can_read(buffer); // could be less
+-    return (float)(buffered + ao_data.buffersize)/(float)ao_data.bps;
++    return (float)(buffered + abs(ao_data.buffersize))/(float)ao_data.bps;
+ }
+Index: /opt/code/mplayer-cvs/libao2/audio_out.c
+===================================================================
+--- /opt/code/mplayer-cvs/libao2/audio_out.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libao2/audio_out.c	(working copy)
+@@ -55,6 +55,10 @@
+ extern const ao_functions_t audio_out_pcm;
+ extern const ao_functions_t audio_out_pss;
+ 
++#ifdef __AMIGAOS4__
++extern const ao_functions_t audio_out_ahi_dev2;
++#endif
++
+ const ao_functions_t* const audio_out_drivers[] =
+ {
+ // native:
+@@ -117,6 +121,9 @@
+ #ifdef CONFIG_V4L2_DECODER
+         &audio_out_v4l2,
+ #endif
++#ifdef __AMIGAOS4__
++        &audio_out_ahi_dev2,
++#endif
+         &audio_out_null,
+ // should not be auto-selected:
+         &audio_out_pcm,
+Index: /opt/code/mplayer-cvs/libmenu/menu_console.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmenu/menu_console.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmenu/menu_console.c	(working copy)
+@@ -38,6 +38,10 @@
+ #include <unistd.h>
+ #include <errno.h>
+ 
++#if defined(__MORPHOS__) || defined(__AMIGAOS4__)
++#include <proto/dos.h>
++#endif
++
+ #include "libavutil/mem.h"
+ #include "libavutil/avstring.h"
+ #include "libmpcodecs/img_format.h"
+@@ -247,6 +251,9 @@
+ }
+ 
+ static void check_child(menu_t* menu) {
++#ifdef __AMIGAOS4__
++printf("libmenu/menu_console.c - %s:%d\n",__FUNCTION__,__LINE__);
++#else
+ #if RUN_CMD
+   fd_set rfd;
+   struct timeval tv;
+@@ -295,12 +302,42 @@
+     }
+   }
+ #endif
+-
++#endif
+ }
+ 
+ #define close_pipe(pipe) close(pipe[0]); close(pipe[1])
+ 
+ static int run_shell_cmd(menu_t* menu, char* cmd) {
++#if defined(__MORPHOS__) || defined(__AMIGAOS4__)
++  BPTR out;
++
++  mp_msg(MSGT_GLOBAL,MSGL_INFO,MSGTR_LIBMENU_ConsoleRun,cmd);
++
++  out = Open("T:mplayer_cmd_output", MODE_NEWFILE);
++
++#ifdef __AMIGAOS4__
++  SystemTags(cmd, SYS_Output,out? out : Output() ,TAG_DONE);
++#else
++  Execute(cmd, NULL, out ? out : Output());
++#endif
++  if(out)
++  {
++   char line[1024];
++
++   Close(out);
++   out = Open("T:mplayer_cmd_output", MODE_OLDFILE);
++
++   if(out)
++   {
++	   while(FGets(out, line, sizeof(line)))
++	   {
++		   add_line(mpriv,line);
++	   }
++	   Close(out);
++   }
++   Delete("T:mplayer_cmd_output");
++  }
++#else
+ #if RUN_CMD
+   int in[2],out[2],err[2];
+ 
+@@ -345,6 +382,7 @@
+   mpriv->prompt = mpriv->child_prompt;
+   //add_line(mpriv,"Child process started");
+ #endif
++#endif
+   return 1;
+ }
+ 
+Index: /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c	(working copy)
+@@ -18,6 +18,10 @@
+  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+  */
+ 
++#ifdef __AMIGAOS4__
++#undef _FILE_OFFSET_BITS
++#endif
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpcodecs/img_format.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpcodecs/img_format.c	(working copy)
+@@ -146,6 +146,12 @@
+     case IMGFMT_VDPAU_WMV3:      return "WMV3 VDPAU acceleration";
+     case IMGFMT_VDPAU_VC1:       return "VC1 VDPAU acceleration";
+     case IMGFMT_VDPAU_HEVC:      return "HEVC VDPAU acceleration";
++    case IMGFMT_VAAPI_MPEG2:     return "MPEG2 VAAPI acceleration";
++    case IMGFMT_VAAPI_H264:      return "H.264 VAAPI acceleration";
++    case IMGFMT_VAAPI_MPEG4:     return "MPEG-4 Part 2 VAAPI acceleration";
++    case IMGFMT_VAAPI_WMV3:      return "WMV3 VAAPI acceleration";
++    case IMGFMT_VAAPI_VC1:       return "VC1 VAAPI acceleration";
++    case IMGFMT_VAAPI_HEVC:      return "HEVC VAAPI acceleration";
+     }
+     snprintf(unknown_format,20,"Unknown 0x%04x",format);
+     return unknown_format;
+Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.h
+===================================================================
+--- /opt/code/mplayer-cvs/libmpcodecs/img_format.h	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpcodecs/img_format.h	(working copy)
+@@ -296,8 +296,19 @@
+ #define IMGFMT_VDPAU_MPEG4         (IMGFMT_VDPAU|0x06)
+ #define IMGFMT_VDPAU_HEVC          (IMGFMT_VDPAU|0x07)
+ 
+-#define IMGFMT_IS_HWACCEL(fmt) (IMGFMT_IS_VDPAU(fmt))
++#define IMGFMT_VAAPI               0x1DC90000
++#define IMGFMT_VAAPI_MASK          0xFFFF0000
++#define IMGFMT_IS_VAAPI(fmt)       (((fmt) & IMGFMT_VAAPI_MASK) == IMGFMT_VAAPI)
++// (Or values match the VAProfile in libva, in case that's ever useful.)
++#define IMGFMT_VAAPI_MPEG2         (IMGFMT_VAAPI | 1)
++#define IMGFMT_VAAPI_MPEG4         (IMGFMT_VAAPI | 3)
++#define IMGFMT_VAAPI_H264          (IMGFMT_VAAPI | 7)
++#define IMGFMT_VAAPI_WMV3          (IMGFMT_VAAPI | 9)
++#define IMGFMT_VAAPI_VC1           (IMGFMT_VAAPI | 10)
++#define IMGFMT_VAAPI_HEVC          (IMGFMT_VAAPI | 17)
+ 
++#define IMGFMT_IS_HWACCEL(fmt) (IMGFMT_IS_VDPAU(fmt) || IMGFMT_IS_VAAPI(fmt))
++
+ typedef struct {
+     void* data;
+     int size;
+Index: /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c	(working copy)
+@@ -19,7 +19,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <assert.h>
+-#include <time.h>
++// #include <time.h> -- not needed on AmigaOS4
+ 
+ #include "config.h"
+ #include "mp_msg.h"
+@@ -41,6 +41,9 @@
+ #include "libavcodec/vdpau.h"
+ #include "vdpau_frame_data.h"
+ #endif
++#if CONFIG_VAAPI
++#include "libavcodec/vaapi.h"
++#endif
+ #include "libavutil/pixdesc.h"
+ 
+ static const vd_info_t info = {
+@@ -88,10 +91,16 @@
+     int b_count;
+     AVRational last_sample_aspect_ratio;
+     int palette_sent;
+-    int use_vdpau;
++    enum {
++        HWACCEL_MODE_NONE,
++        HWACCEL_MODE_VDPAU,
++        HWACCEL_MODE_VAAPI,
++    } hwaccel_mode;
+ } vd_ffmpeg_ctx;
+ 
+ #include "m_option.h"
++/* Global VAAPI hw_device_ctx - shared with vo_vaapi.c */
++AVBufferRef *vaapi_hw_device_ctx = NULL;
+ 
+ static int get_buffer(AVCodecContext *avctx, AVFrame *pic, int isreference);
+ static int mpcodec_default_get_buffer(AVCodecContext *avctx, AVFrame *frame);
+@@ -231,6 +240,15 @@
+         case AV_CODEC_ID_VC1:        return IMGFMT_VDPAU_VC1;
+         case AV_CODEC_ID_HEVC:       return IMGFMT_VDPAU_HEVC;
+         }
++    if (fmt == AV_PIX_FMT_VAAPI)
++        switch (cid) {
++        case AV_CODEC_ID_H264:       return IMGFMT_VAAPI_H264;
++        case AV_CODEC_ID_MPEG2VIDEO: return IMGFMT_VAAPI_MPEG2;
++        case AV_CODEC_ID_MPEG4:      return IMGFMT_VAAPI_MPEG4;
++        case AV_CODEC_ID_WMV3:       return IMGFMT_VAAPI_WMV3;
++        case AV_CODEC_ID_VC1:        return IMGFMT_VAAPI_VC1;
++        case AV_CODEC_ID_HEVC:       return IMGFMT_VAAPI_HEVC;
++        }
+     return pixfmt2imgfmt(fmt);
+ }
+ 
+@@ -276,25 +294,95 @@
+     int imgfmt;
+     if (fmt == AV_PIX_FMT_NONE)
+         return;
+-    ctx->use_vdpau = fmt == AV_PIX_FMT_VDPAU;
+     imgfmt = pixfmt2imgfmt2(fmt, avctx->codec_id);
++    switch(fmt) {
+ #if CONFIG_VDPAU
+-    if (!ctx->use_vdpau) {
++    case AV_PIX_FMT_VDPAU:
++        ctx->hwaccel_mode = HWACCEL_MODE_VDPAU;
++        {
++            AVVDPAUContext *vdpc = avctx->hwaccel_context;
++            if (!vdpc)
++                avctx->hwaccel_context = vdpc = av_alloc_vdpaucontext();
++            vdpc->render2 = vdpau_render_wrapper;
++        }
++        break;
++#endif
++#if CONFIG_VAAPI
++    case AV_PIX_FMT_VAAPI:
++        ctx->hwaccel_mode = HWACCEL_MODE_VAAPI;
++        {
++            if (!avctx->hw_device_ctx) {
++                AVBufferRef *hw_device_ctx = NULL;
++                int err = av_hwdevice_ctx_create(&hw_device_ctx,
++                                                 AV_HWDEVICE_TYPE_VAAPI,
++                                                 NULL, NULL, 0);
++                if (err < 0) {
++                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
++                           "[VD_FFMPEG] av_hwdevice_ctx_create failed: %d\n", err);
++                    break;
++                }
++                avctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
++                if (vaapi_hw_device_ctx) { av_buffer_unref(&vaapi_hw_device_ctx); vaapi_hw_device_ctx = NULL; }
++                vaapi_hw_device_ctx = av_buffer_ref(hw_device_ctx);
++                av_buffer_unref(&hw_device_ctx);
++            }
++            /* Must set hw_frames_ctx in get_format() for FFmpeg 5+ */
++            {
++                AVBufferRef *hw_frames_ref = av_hwframe_ctx_alloc(avctx->hw_device_ctx);
++                if (!hw_frames_ref) {
++                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
++                           "[VD_FFMPEG] av_hwframe_ctx_alloc failed\n");
++                    break;
++                }
++                AVHWFramesContext *frames_ctx =
++                    (AVHWFramesContext *)hw_frames_ref->data;
++                frames_ctx->format    = AV_PIX_FMT_VAAPI;
++                frames_ctx->sw_format = AV_PIX_FMT_NV12;
++                frames_ctx->width     = avctx->coded_width;
++                frames_ctx->height    = avctx->coded_height;
++                /* Pool size based on resolution: 4K needs fewer surfaces */
++                {
++                    int w = avctx->coded_width;
++                    int h = avctx->coded_height;
++                    if (w >= 3840 || h >= 2160)
++                        frames_ctx->initial_pool_size = 8;
++                    else if (w >= 1920 || h >= 1080)
++                        frames_ctx->initial_pool_size = 8;
++                    else
++                        frames_ctx->initial_pool_size = 12;
++                }
++                int err2 = av_hwframe_ctx_init(hw_frames_ref);
++                if (err2 < 0) {
++                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
++                           "[VD_FFMPEG] av_hwframe_ctx_init failed: %d\n", err2);
++                    av_buffer_unref(&hw_frames_ref);
++                    break;
++                }
++                av_buffer_unref(&avctx->hw_frames_ctx);
++                avctx->hw_frames_ctx = hw_frames_ref;
++            }
++        }
++        break;
++#endif
++    default:
++        ctx->hwaccel_mode = HWACCEL_MODE_NONE;
+         av_freep(&avctx->hwaccel_context);
+-    } else {
+-        AVVDPAUContext *vdpc = avctx->hwaccel_context;
+-        if (!vdpc)
+-            avctx->hwaccel_context = vdpc = av_alloc_vdpaucontext();
+-        vdpc->render2 = vdpau_render_wrapper;
++        break;
+     }
+-#endif
+     if (IMGFMT_IS_HWACCEL(imgfmt)) {
+         ctx->do_dr1    = 1;
+         ctx->nonref_dr = 0;
+-        avctx->get_buffer2 = get_buffer2;
+-        mp_msg(MSGT_DECVIDEO, MSGL_V,
+-               "[VD_FFMPEG] VDPAU accelerated decoding\n");
+-        if (ctx->use_vdpau) {
++        /* VAAPI with hw_device_ctx: FFmpeg manages buffers, use default */
++        if (ctx->hwaccel_mode == HWACCEL_MODE_VAAPI)
++            avctx->get_buffer2 = avcodec_default_get_buffer2;
++        else
++            avctx->get_buffer2 = get_buffer2;
++        if (ctx->hwaccel_mode == HWACCEL_MODE_VDPAU ||
++            ctx->hwaccel_mode == HWACCEL_MODE_VAAPI) {
++            mp_msg(MSGT_DECVIDEO, MSGL_V,
++                   ctx->hwaccel_mode == HWACCEL_MODE_VDPAU ?
++                   "[VD_FFMPEG] VDPAU accelerated decoding\n" :
++                   "[VD_FFMPEG] VAAPI accelerated decoding\n");
+             avctx->draw_horiz_band = NULL;
+             avctx->slice_flags = 0;
+             ctx->do_slices = 0;
+@@ -340,6 +428,24 @@
+     avctx->get_format = get_format;
+     avctx->flags|= lavc_param_bitexact;
+ 
++#if CONFIG_VAAPI
++    /* Set hw_device_ctx before avcodec_open2 so get_format can use VAAPI */
++    {
++        AVBufferRef *hw_device_ctx = NULL;
++        int err = av_hwdevice_ctx_create(&hw_device_ctx,
++                                         AV_HWDEVICE_TYPE_VAAPI,
++                                         NULL, NULL, 0);
++        if (err < 0) {
++            mp_msg(MSGT_DECVIDEO, MSGL_WARN,
++                   "[VD_FFMPEG] av_hwdevice_ctx_create failed: %d\n", err);
++        } else {
++            avctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
++            vaapi_hw_device_ctx = av_buffer_ref(hw_device_ctx);
++            av_buffer_unref(&hw_device_ctx);
++        }
++    }
++#endif
++
+     avctx->coded_width = sh->disp_w;
+     avctx->coded_height= sh->disp_h;
+     avctx->workaround_bugs= lavc_param_workaround_bugs;
+@@ -473,7 +579,7 @@
+ 
+     set_dr_slice_settings(avctx, lavc_codec);
+     avctx->thread_count = lavc_param_threads;
+-    avctx->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
++    avctx->thread_type = FF_THREAD_SLICE;
+     av_dict_set(&opts, "refcounted_frames", "1", 0);
+ 
+     /* open it */
+@@ -495,10 +601,24 @@
+     vd_ffmpeg_ctx *ctx = sh->context;
+     AVCodecContext *avctx = ctx->avctx;
+ 
++    /* Step 1: Unref all frames to release VAAPI surfaces back to pool */
+     if (ctx->refcount_frame) {
+         av_frame_unref(ctx->refcount_frame);
+         ctx->refcount_frame = NULL;
+     }
++    if (ctx->pic)
++        av_frame_unref(ctx->pic);
++
++    /* Step 2: Flush decoder - releases all internal buffered frames */
++    if (avctx && avctx->codec)
++        avcodec_flush_buffers(avctx);
++
++    /* Step 2b: Free pic frame container after flush */
++    if (ctx->pic) {
++        av_frame_free(&ctx->pic);
++        ctx->pic = NULL;
++    }
++
+     if(lavc_param_vstats){
+         int i;
+         for(i=0; i<32; i++){
+@@ -510,17 +630,29 @@
+             );
+     }
+ 
++    /* Step 3: Close codec */
+     if (avctx) {
+         if (avctx->codec && avcodec_close(avctx) < 0)
+             mp_msg(MSGT_DECVIDEO, MSGL_ERR, MSGTR_CantCloseCodec);
+-
+         av_freep(&avctx->extradata);
+         av_freep(&avctx->hwaccel_context);
+     }
+ 
++    /* Step 4: Release HW contexts after codec closed */
++    if (avctx) {
++        av_buffer_unref(&avctx->hw_frames_ctx);
++        av_buffer_unref(&avctx->hw_device_ctx);
++    }
++
++    /* Step 5: Free codec context */
+     avcodec_free_context(&avctx);
+-    av_frame_free(&ctx->pic);
+     free(ctx);
++
++    /* Step 6: Free shared VAAPI hw_device_ctx */
++    if (vaapi_hw_device_ctx) {
++        av_buffer_unref(&vaapi_hw_device_ctx);
++        vaapi_hw_device_ctx = NULL;
++    }
+ }
+ 
+ static void draw_slice(struct AVCodecContext *s,
+@@ -535,8 +667,8 @@
+         mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called with NULL pointer!\n");
+         return;
+     }
+-    if (mpi && ctx->use_vdpau) {
+-        mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called for VDPAU!\n");
++    if (mpi && ctx->hwaccel_mode != HWACCEL_MODE_NONE) {
++        mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called in hwaccel mode!\n");
+         return;
+     }
+     if (height < 0)
+@@ -724,14 +856,25 @@
+         avctx->draw_horiz_band= draw_slice;
+     } else
+         avctx->draw_horiz_band= NULL;
++    switch(ctx->hwaccel_mode) {
+ #if CONFIG_VDPAU
+-    if (ctx->use_vdpau) {
+-        VdpVideoSurface surface = (VdpVideoSurface)mpi->priv;
+-        avctx->draw_horiz_band= NULL;
+-        mpi->planes[3] = (char *)surface;
++    case HWACCEL_MODE_VDPAU:
++        {
++            VdpVideoSurface surface = (VdpVideoSurface)mpi->priv;
++            avctx->draw_horiz_band= NULL;
++            mpi->planes[3] = surface;
++        }
++        break;
++#endif
++#if CONFIG_VAAPI
++    case HWACCEL_MODE_VAAPI:
++        {
++            // This is the VASurfaceID.
++            mpi->planes[3] = mpi->priv;
++        }
++        break;
++#endif
+     }
+-#endif
+-
+     pic->data[0]= mpi->planes[0];
+     pic->data[1]= mpi->planes[1];
+     pic->data[2]= mpi->planes[2];
+@@ -794,6 +937,9 @@
+     sh_video_t *sh = avctx->opaque;
+     vd_ffmpeg_ctx *ctx = sh->context;
+     int i;
++
++/* VAAPI surfaces managed by FFmpeg hw_device_ctx - no manual release needed */
++
+     if (pic->opaque == NULL) {
+         mpcodec_default_release_buffer(avctx, pic);
+         return;
+@@ -923,6 +1069,7 @@
+     if(ret<0) mp_msg(MSGT_DECVIDEO, MSGL_WARN, "Error while decoding frame! (%i)\n", ret);
+ //printf("repeat: %d\n", pic->repeat_pict);
+ //-- vstats generation
++#ifndef __amigaos4__
+     while(lavc_param_vstats){ // always one time loop
+         static FILE *fvstats=NULL;
+         char filename[20];
+@@ -999,6 +1146,7 @@
+ 
+         break;
+     }
++#endif /* !__amigaos4__ */
+ //--
+ 
+     if(!got_picture) {
+@@ -1035,6 +1183,10 @@
+         mpi->planes[1]=pic->data[1];
+         mpi->planes[2]=pic->data[2];
+         mpi->planes[3]=pic->data[3];
++        if (pic->data[3])
++            mp_msg(MSGT_DECVIDEO, MSGL_INFO,
++                   "[VD_FFMPEG] frame planes[3]=0x%lx imgfmt=0x%x flags=0x%x\n",
++                   (unsigned long)pic->data[3], mpi->imgfmt, mpi->flags);
+         mpi->stride[0]=pic->linesize[0];
+         mpi->stride[1]=pic->linesize[1];
+         mpi->stride[2]=pic->linesize[2];
+@@ -1041,7 +1193,8 @@
+         mpi->stride[3]=pic->linesize[3];
+     }
+ 
+-    if (!mpi->planes[0])
++    /* HW frames have no planes[0] — surface ID is in planes[3] */
++    if (!mpi->planes[0] && !mpi->planes[3])
+         return NULL;
+ 
+     if(ctx->best_csp == IMGFMT_422P && mpi->chroma_y_shift==1){
+Index: /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c	(working copy)
+@@ -28,6 +28,7 @@
+ 
+ #include "sub/sub.h"
+ #include "libvo/video_out.h"
++extern const vo_functions_t* vo_current_override;
+ #include "sub/eosd.h"
+ 
+ //===========================================================================//
+@@ -72,8 +73,33 @@
+     vf->default_caps=query_format(vf,outfmt);
+     vf->draw_slice = (vf->default_caps & VOCAP_NOSLICES) ? NULL : draw_slice;
+ 
+-    if(config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt))
+-	return 0;
++    if(config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt)) {
++        /* config failed - try next VO in list */
++        extern const vo_functions_t* const video_out_drivers[];
++        int i;
++        for (i = 0; video_out_drivers[i]; i++) {
++            if (video_out_drivers[i] == video_out) {
++                if (video_out_drivers[i+1]) {
++                    const vo_functions_t *next_vo = video_out_drivers[i+1];
++                    mp_msg(MSGT_CPLAYER, MSGL_INFO, "VO: config failed, falling back to %s\n", next_vo->info->short_name);
++                    if (next_vo->preinit(NULL) == 0) {
++                        video_out->uninit();
++                        vf->priv->vo = (vo_functions_t *)next_vo;
++                        vo_current_override = next_vo; /* Signal mplayer.c */
++                        /* Update caps and draw_slice for new VO */
++                        vf->default_caps = query_format(vf, outfmt);
++                        vf->draw_slice = (vf->default_caps & VOCAP_NOSLICES) ? NULL : draw_slice;
++                        if (!config_video_out(video_out,width,height,d_width,d_height,flags,"MPlayer",outfmt)) {
++                            ++vo_config_count;
++                            return 1;
++                        }
++                    }
++                }
++                break;
++            }
++        }
++        return 0;
++    }
+ 
+     ++vo_config_count;
+     return 1;
+@@ -173,10 +199,13 @@
+   vf->priv->endpts = endpts;
+   // first check, maybe the vo/vf plugin implements draw_image using mpi:
+   if(video_out->control(VOCTRL_DRAW_IMAGE,mpi)==VO_TRUE) return 1; // done.
++  // For HW frames: planes[3] contains the surface ID — always call draw_frame
++  if(IMGFMT_IS_HWACCEL(mpi->imgfmt)) {
++      video_out->draw_frame(mpi->planes);
++      return 1;
++  }
+   // nope, fallback to old draw_frame/draw_slice:
+   if(!(mpi->flags&(MP_IMGFLAG_DIRECT|MP_IMGFLAG_DRAW_CALLBACK))){
+-    // blit frame:
+-//    if(mpi->flags&MP_IMGFLAG_PLANAR)
+     if(vf->default_caps&VFCAP_ACCEPT_STRIDE)
+         video_out->draw_slice(mpi->planes,mpi->stride,mpi->w,mpi->h,mpi->x,mpi->y);
+     else
+Index: /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c	(working copy)
+@@ -220,6 +220,14 @@
+             avformat_network_init();
+             priv->use_lavf_netstream  = 1;
+         }
++        /* AmigaOS4: HTTPS direkt via FFmpeg oeffnen fuer besseres Buffering */
++        #ifdef __amigaos4__
++        if (demuxer->stream->url && strncmp(demuxer->stream->url, "https://", 8) == 0) {
++            mp_msg(MSGT_HEADER,MSGL_V,"LAVF: HTTPS direct FFmpeg streaming (AmigaOS4)\n");
++            avformat_network_init();
++            priv->use_lavf_netstream = 1;
++        }
++        #endif
+     }
+ 
+     return DEMUXER_TYPE_LAVF;
+@@ -686,6 +694,7 @@
+ 
+     demux->filepos=stream_tell(demux->stream);
+ 
++    memset(&pkt, 0, sizeof(pkt));
+     if(av_read_frame(priv->avfc, &pkt) < 0)
+         return 0;
+ 
+@@ -947,8 +956,10 @@
+          av_freep(&priv->avfc->key);
+          avformat_close_input(&priv->avfc);
+         }
+-        if (priv->pb) av_freep(&priv->pb->buffer);
+-        av_freep(&priv->pb);
++        if (priv->pb) {
++            av_freep(&priv->pb->buffer);
++            avio_context_free(&priv->pb);
++        }
+         free(priv); demuxer->priv= NULL;
+     }
+ }
+Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpdemux/demuxer.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpdemux/demuxer.c	(working copy)
+@@ -113,6 +113,7 @@
+ extern const demuxer_desc_t demuxer_desc_aac;
+ extern const demuxer_desc_t demuxer_desc_nut;
+ extern const demuxer_desc_t demuxer_desc_mng;
++extern const demuxer_desc_t demuxer_desc_mod;
+ 
+ // never add this to the list
+ extern const demuxer_desc_t demuxer_desc_demuxers;
+@@ -181,15 +182,16 @@
+     &demuxer_desc_rawdv,
+ #endif
+     &demuxer_desc_aac,
+-#ifdef CONFIG_LIBNUT
++#if CONFIG_LIBNUT
+     &demuxer_desc_nut,
+ #endif
+ #ifdef CONFIG_XMMS
+     &demuxer_desc_xmms,
+ #endif
+-#ifdef CONFIG_MNG
++#if CONFIG_MNG
+     &demuxer_desc_mng,
+ #endif
++    &demuxer_desc_mod,
+     /* Please do not add any new demuxers here. If you want to implement a new
+      * demuxer, add it to libavformat, except for wrappers around external
+      * libraries and demuxers requiring binary support. */
+Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.h
+===================================================================
+--- /opt/code/mplayer-cvs/libmpdemux/demuxer.h	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpdemux/demuxer.h	(working copy)
+@@ -28,6 +28,10 @@
+ #include "sub/ass_mp.h"
+ #include "m_option.h"
+ 
++#ifdef __AMIGAOS4__
++#include <limits.h>
++#endif
++
+ #ifdef HAVE_BUILTIN_EXPECT
+ #define likely(x) __builtin_expect ((x) != 0, 1)
+ #define unlikely(x) __builtin_expect ((x) != 0, 0)
+@@ -36,8 +40,8 @@
+ #define unlikely(x) (x)
+ #endif
+ 
+-#define MAX_PACKS 4096
+-#define MAX_PACK_BYTES 0x2000000
++#define MAX_PACKS 512
++#define MAX_PACK_BYTES 0x800000
+ 
+ #define DEMUXER_TYPE_UNKNOWN 0
+ #define DEMUXER_TYPE_MPEG_ES 1
+@@ -84,11 +88,12 @@
+ #define DEMUXER_TYPE_LAVF_PREFERRED 44
+ #define DEMUXER_TYPE_RTP_NEMESI 45
+ #define DEMUXER_TYPE_MNG 46
++#define DEMUXER_TYPE_MOD 47
+ 
+ // This should always match the highest demuxer type number.
+ // Unless you want to disallow users to force the demuxer to some types
+ #define DEMUXER_TYPE_MIN 0
+-#define DEMUXER_TYPE_MAX 46
++#define DEMUXER_TYPE_MAX 47
+ 
+ #define DEMUXER_TYPE_DEMUXERS (1<<16)
+ // A virtual demuxer type for the network code
+Index: /opt/code/mplayer-cvs/libmpdemux/extension.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpdemux/extension.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpdemux/extension.c	(working copy)
+@@ -63,10 +63,10 @@
+         { "ogm", DEMUXER_TYPE_OGG },
+ //        { "pls", DEMUXER_TYPE_PLAYLIST },
+ //        { "m3u", DEMUXER_TYPE_PLAYLIST },
+-        { "xm", DEMUXER_TYPE_XMMS },
+-        { "mod", DEMUXER_TYPE_XMMS },
+-        { "s3m", DEMUXER_TYPE_XMMS },
+-        { "it", DEMUXER_TYPE_XMMS },
++        { "xm", DEMUXER_TYPE_MOD },
++        { "mod", DEMUXER_TYPE_MOD },
++        { "s3m", DEMUXER_TYPE_MOD },
++        { "it", DEMUXER_TYPE_MOD },
+         { "mid", DEMUXER_TYPE_XMMS },
+         { "midi", DEMUXER_TYPE_XMMS },
+         { "nsv", DEMUXER_TYPE_NSV },
+Index: /opt/code/mplayer-cvs/libmpeg2/cpu_state.c
+===================================================================
+--- /opt/code/mplayer-cvs/libmpeg2/cpu_state.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libmpeg2/cpu_state.c	(working copy)
+@@ -43,7 +43,7 @@
+ }
+ #endif
+ 
+-#if ARCH_PPC
++#if 0 // ARCH_PPC disabled for AmigaOS4
+ #if defined(__APPLE_CC__)	/* apple */
+ #define LI(a,b) "li r" #a "," #b "\n\t"
+ #define STVX0(a,b,c) "stvx v" #a ",0,r" #c "\n\t"
+@@ -120,7 +120,7 @@
+ 	mpeg2_cpu_state_restore = state_restore_mmx;
+     }
+ #endif
+-#if ARCH_PPC
++#if 0 // ARCH_PPC disabled for AmigaOS4
+     if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
+ 	mpeg2_cpu_state_save = state_save_altivec;
+ 	mpeg2_cpu_state_restore = state_restore_altivec;
+Index: /opt/code/mplayer-cvs/libvo/video_out.c
+===================================================================
+--- /opt/code/mplayer-cvs/libvo/video_out.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libvo/video_out.c	(working copy)
+@@ -142,6 +142,16 @@
+ extern const vo_functions_t video_out_md5sum;
+ extern const vo_functions_t video_out_mng;
+ 
++#ifdef __AMIGAOS4__
++extern const vo_functions_t video_out_p96_pip;
++extern const vo_functions_t video_out_comp_yuv2;
++extern const vo_functions_t video_out_comp_yuv;
++extern const vo_functions_t video_out_comp;
++extern const vo_functions_t video_out_cgx_wpa;
++extern const vo_functions_t video_out_amiga;
++extern const vo_functions_t video_out_vaapi;
++#endif
++
+ /* The following declarations are _not_ const because functions pointers
+  * get overloaded during (re)initialization. */
+ extern vo_functions_t video_out_cvidix;
+@@ -170,7 +180,7 @@
+         &video_out_kva,
+ #endif
+ #ifdef CONFIG_COREVIDEO
+-#ifdef CONFIG_GL
++#if CONFIG_GL
+         &video_out_gl_nosw,
+ #endif
+         &video_out_corevideo,
+@@ -199,11 +209,18 @@
+ #if CONFIG_VDPAU
+         &video_out_vdpau,
+ #endif
++#if CONFIG_VAAPI
++        &video_out_vaapi,
++#endif
++        &video_out_comp_yuv2,
++#ifdef CONFIG_SDL
++        &video_out_sdl,
++#endif
+ #ifdef CONFIG_XV
+         &video_out_xv,
+ #endif
+ #ifndef CONFIG_COREVIDEO
+-#ifdef CONFIG_GL
++#if CONFIG_GL
+         &video_out_gl_nosw,
+ #endif
+ #endif
+@@ -214,7 +231,7 @@
+ #ifdef CONFIG_SDL
+         &video_out_sdl,
+ #endif
+-#ifdef CONFIG_GL
++#if CONFIG_GL
+         &video_out_gl,
+ #endif
+ #if defined(CONFIG_GL_WIN32) || defined(CONFIG_GL_X11) || defined(CONFIG_GL_OSX)
+@@ -233,7 +250,7 @@
+ #ifdef CONFIG_SVGALIB
+         &video_out_svga,
+ #endif
+-#ifdef CONFIG_MATRIXVIEW
++#if CONFIG_MATRIXVIEW
+         &video_out_matrixview,
+ #endif
+ #ifdef CONFIG_AA
+@@ -274,6 +291,15 @@
+ #endif
+         &video_out_cvidix,
+ #endif
++#ifdef __AMIGAOS4__
++        &video_out_p96_pip,
++        &video_out_comp_yuv2,
++        &video_out_comp_yuv,
++        &video_out_comp,
++        &video_out_cgx_wpa,
++        &video_out_vaapi,
++        &video_out_amiga,
++#endif
+         &video_out_null,
+         &video_out_mpegpes,
+ #ifdef CONFIG_YUV4MPEG
+@@ -297,7 +323,7 @@
+ #ifdef CONFIG_MD5SUM
+         &video_out_md5sum,
+ #endif
+-#ifdef CONFIG_MNG
++#if CONFIG_MNG
+         &video_out_mng,
+ #endif
+         NULL
+@@ -314,6 +340,9 @@
+       mp_msg(MSGT_GLOBAL, MSGL_INFO,"\n");
+ }
+ 
++/* Global VO override for fallback switching */
++const vo_functions_t* vo_current_override = NULL;
++
+ const vo_functions_t* init_best_video_out(char** vo_list){
+     int i;
+     // first try the preferred drivers, with their optional subdevice param:
+Index: /opt/code/mplayer-cvs/libvo/vo_sdl.c
+===================================================================
+--- /opt/code/mplayer-cvs/libvo/vo_sdl.c	(revision 38685)
++++ /opt/code/mplayer-cvs/libvo/vo_sdl.c	(working copy)
+@@ -509,7 +509,11 @@
+ 	aspect_save_screenres(screen_surface_w, screen_surface_h);
+ 
+ 	/* calculate new video size/aspect */
++	#ifdef __AMIGAOS4__
++	if(priv->mode == YUV)
++#else
+ 	if(priv->mode == YUV && priv->fulltype&VOFLAG_FULLSCREEN)
++#endif
+         aspect(&priv->dstwidth, &priv->dstheight, A_ZOOM);
+ 
+ 	/* try to change to given fullscreenmode */
+@@ -607,8 +611,13 @@
+ 	/* Save the original Image size */
+     priv->width  = width;
+     priv->height = height;
++#ifdef __AMIGAOS4__
++    priv->dstwidth  = d_width  ? d_width  : vo_dwidth;
++    priv->dstheight = d_height ? d_height : vo_dheight;
++#else
+     priv->dstwidth  = vo_dwidth;
+     priv->dstheight = vo_dheight;
++#endif
+     /* SDL can only scale YUV data */
+     if(priv->mode == RGB || priv->mode == BGR) {
+         priv->dstwidth = width;
+@@ -667,6 +676,10 @@
+ 		||(strcmp(priv->driver, "Quartz") == 0)
+ 		||(strcmp(priv->driver, "cgx") == 0)
+ 		||(strcmp(priv->driver, "os4video") == 0)
++#ifdef __AMIGAOS4__
++		||(strcmp(priv->driver, "OS4") == 0)
++		||(strcmp(priv->driver, "os4") == 0)
++#endif
+ 		||((strcmp(priv->driver, "aalib") == 0) && priv->X)){
+  			mp_msg(MSGT_VO,MSGL_V, "SDL: setting windowed mode\n");
+             set_video_mode(priv->dstwidth, priv->dstheight, priv->bpp, priv->sdlflags);
+@@ -781,7 +794,7 @@
+     if(priv->mode != YUV) {
+         if(!priv->rgbsurface) {
+             mp_msg(MSGT_VO,MSGL_WARN, MSGTR_LIBVO_SDL_CouldntCreateARGBSurface, SDL_GetError());
+-            return -1;
++   //         return -1;
+         }
+ 
+         priv->dblit = 0;
+@@ -1269,7 +1282,7 @@
+     if (!vo_sdl_init()) {
+             mp_msg(MSGT_VO,MSGL_ERR, MSGTR_LIBVO_SDL_InitializationFailed, SDL_GetError());
+ 
+-            return -1;
++   //         return -1;
+     }
+ 
+     SDL_VideoDriverName(priv->driver, 8);
+Index: /opt/code/mplayer-cvs/mpcommon.c
+===================================================================
+--- /opt/code/mplayer-cvs/mpcommon.c	(revision 38685)
++++ /opt/code/mplayer-cvs/mpcommon.c	(working copy)
+@@ -620,10 +620,12 @@
+                        filename_recode(font_name));
+         } else {
+             // try default:
++#ifndef __AMIGAOS4__
+             char *desc_path = get_path("font/font.desc");
+             vo_font = read_font_desc(desc_path, font_factor, verbose>1);
+             free(desc_path);
+             if (!vo_font)
++#endif
+                 vo_font = read_font_desc(MPLAYER_DATADIR "/font/font.desc", font_factor, verbose>1);
+         }
+         if (sub_font_name)
+@@ -645,6 +647,14 @@
+ {
+     spudec_free(vo_spudec);
+     vo_spudec = NULL;
++
++    /* v148: FFmpeg Log-Callback zuruecksetzen */
++    av_log_set_callback(NULL);
++
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++    /* v148: OpenSSL Mutex freigeben */
++    // ff_openssl_deinit();
++#endif
+ #ifdef CONFIG_FREETYPE
+     current_module = "uninit_font";
+     if (sub_font && sub_font != vo_font)
+Index: /opt/code/mplayer-cvs/mplayer.c
+===================================================================
+--- /opt/code/mplayer-cvs/mplayer.c	(revision 38685)
++++ /opt/code/mplayer-cvs/mplayer.c	(working copy)
+@@ -31,6 +31,13 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ 
++#ifdef __AMIGAOS4__
++#include <stdio.h>
++#define AMIGA_VERSION "mplayer-SVN-r38685 (13.05.2026)"
++static const char * __attribute__((used)) stackcookie = "$STACK: 500000";
++static const char *__attribute__((used)) version_tag = "$VER: " AMIGA_VERSION ;
++#endif
++
+ #if defined(__MINGW32__) || defined(__CYGWIN__)
+ #define _UWIN 1  /*disable Non-underscored versions of non-ANSI functions as otherwise int eof would conflict with eof()*/
+ #include <windows.h>
+@@ -62,7 +69,11 @@
+  * make it all work is to use the builtin SDL-bootstrap code, which
+  * will be done automatically by replacing our main() if we include SDL.h.
+  */
+-#if defined(__APPLE__) && defined(CONFIG_SDL)
++#ifdef __AMIGAOS4__
++#include "amigaos/amigaos_stuff.h"
++#endif
++
++#if (defined(__APPLE__) || defined(__AMIGAOS4__)) && defined(CONFIG_SDL)
+ #ifdef CONFIG_SDL_SDL_H
+ #include <SDL/SDL.h>
+ #else
+@@ -86,6 +97,7 @@
+ #include "sub/font_load.h"
+ #include "sub/sub.h"
+ #include "libvo/video_out.h"
++extern const vo_functions_t* vo_current_override;
+ #include "stream/cache2.h"
+ #include "stream/stream.h"
+ #include "stream/stream_bd.h"
+@@ -163,6 +175,9 @@
+ };
+ 
+ static MPContext *mpctx = &mpctx_s;
++#ifdef __AMIGAOS4__
++MPContext *mpctx_global = &mpctx_s;
++#endif
+ 
+ int fixed_vo;
+ 
+@@ -719,6 +734,9 @@
+     common_uninit();
+ 
+     current_module = "exit_player";
++#ifdef __AMIGAOS4__
++    SDL_Quit();
++#endif
+ 
+     if (mpctx->playtree_iter)
+         play_tree_iter_free(mpctx->playtree_iter);
+@@ -763,7 +781,7 @@
+     exit_player_with_rc(how, 1);
+ }
+ 
+-#ifndef __MINGW32__
++#if !defined(__MINGW32__) && !defined(__AMIGAOS4__)
+ static void child_sighandler(int x)
+ {
+     pid_t pid;
+@@ -1505,9 +1523,6 @@
+  */
+ void set_osd_bar(int type, const char *name, double min, double max, double val)
+ {
+-    if (osd_level < 1)
+-        return;
+-
+     if (mpctx->sh_video) {
+         osd_visible = (GetTimerMS() + osd_duration) | 1;
+         vo_osd_progbar_type  = type;
+@@ -2800,6 +2815,11 @@
+     int profile_config_loaded;
+     int i;
+ 
++#ifdef __amigaos4__
++    atexit(AmigaOS_Close); // avoid unfreed resources
++    if (AmigaOS_Open(argc, argv) == -1) exit_player_with_rc(EXIT_QUIT,1);
++#endif
++
+     common_preinit(&argc, &argv);
+ 
+     // Create the config context and register the options
+@@ -2831,7 +2851,22 @@
+     }
+ #endif
+ 
++#ifdef __amigaos4__
++  {
++        int new_argc;
++        char **new_argv;
++
++        AmigaOS_ParseArg(argc, argv, &new_argc, &new_argv);
++        if (new_argc<=0)
++        {
++                opt_exit=1;
++                exit_player_with_rc(EXIT_QUIT,1);
++        }
++        mpctx->playtree = m_config_parse_mp_command_line(mconfig, new_argc, new_argv);
++  }
++#else
+     mpctx->playtree = m_config_parse_mp_command_line(mconfig, argc, argv);
++#endif
+     if (mpctx->playtree == NULL) {
+         // parse error
+         opt_exit = 1;
+@@ -3048,7 +3083,7 @@
+     current_module     = NULL;
+ 
+     // Catch signals
+-#ifndef __MINGW32__
++#if !defined(__MINGW32__) && !defined(__AMIGAOS4__)
+     // TODO: use newer POSIX SIG_IGN behaviour instead to
+     // automatically handle children?
+     signal(SIGCHLD, child_sighandler);
+@@ -3378,6 +3413,13 @@
+ // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
+ goto_enable_cache:
+     if (stream_cache_size > 0) {
++#ifdef __amigaos4__
++        /* AmigaOS4: Cache deaktiviert - Single-Core IPC Race Condition
++         * Der Cache-Prozess laeuft via CreateNewProcTags und teilt den
++         * Adressraum, aber ohne Mutex-Schutz kommt es zu Datenkorrruption.
++         * Lokales Filesystem ist schnell genug ohne Cache. */
++        mp_msg(MSGT_CACHE, MSGL_WARN, "AmigaOS4: -cache nicht unterstuetzt (Race Condition), wird ignoriert.\n");
++#else
+         int res;
+         current_module = "enable_cache";
+         res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024ull,
+@@ -3386,6 +3428,7 @@
+         if (res == 0)
+             if ((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY)))
+                 goto goto_next_file;
++#endif
+     }
+ 
+ //============ Open DEMUXERS --- DETECT file type =======================
+@@ -3897,8 +3940,12 @@
+                     if (!frame_time_remaining && blit_frame) {
+                         unsigned int t2 = GetTimer();
+ 
+-                        if (vo_config_count)
++                        if (vo_config_count) {
++                            /* Use fallback VO if vaapi handed off to comp_yuv2 */
++                            if (vo_current_override)
++                                mpctx->video_out = (vo_functions_t *)vo_current_override;
+                             mpctx->video_out->flip_page();
++                        }
+                         mpctx->num_buffered_frames--;
+ 
+                         vout_time_usage += (GetTimer() - t2) * 0.000001;
+Index: /opt/code/mplayer-cvs/osdep/getch2.c
+===================================================================
+--- /opt/code/mplayer-cvs/osdep/getch2.c	(revision 38685)
++++ /opt/code/mplayer-cvs/osdep/getch2.c	(working copy)
+@@ -24,7 +24,7 @@
+ #include "config.h"
+ 
+ //#define HAVE_TERMCAP
+-#if !defined(__OS2__) && !defined(__MORPHOS__)
++#if !defined(__OS2__) && !defined(__MORPHOS__) && !defined(__AMIGAOS4__)
+ #define CONFIG_IOCTL
+ #endif
+ 
+Index: /opt/code/mplayer-cvs/osdep/shmem.c
+===================================================================
+--- /opt/code/mplayer-cvs/osdep/shmem.c	(revision 38685)
++++ /opt/code/mplayer-cvs/osdep/shmem.c	(working copy)
+@@ -50,6 +50,10 @@
+ #include <sys/shm.h>
+ #endif
+ 
++#ifdef __AMIGAOS4__
++#include <limits.h>
++#endif
++
+ #if defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
+ #define MAP_ANON MAP_ANONYMOUS
+ #endif
+@@ -78,9 +82,14 @@
+ #endif
+     break;
+   case 1:  // ========= MAP_SHARED + /dev/zero ==========
++#ifndef __AMIGAOS4__
+     if (devzero == -1 && (devzero = open("/dev/zero", O_RDWR, 0)) == -1) break;
+     p=mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,devzero,0);
+     if(p==MAP_FAILED) break; // failed
++#else
++    p=malloc(size);
++    if(p=NULL) break; // failed
++#endif
+     mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap /dev/zero (%p)\n",size,p);
+     return p;
+   case 2: { // ========= shmget() ==========
+@@ -118,10 +127,14 @@
+   switch(shmem_type){
+     case 0:
+     case 1:
++#ifndef __AMIGAOS4__
+ 	    if(munmap(p,size)) {
+ 		mp_msg(MSGT_OSDEP, MSGL_ERR, "munmap failed on %p %"PRId64" bytes: %s\n",
+ 		    p,size,strerror(errno));
+ 	    }
++#else
++            if (p) free(p);
++#endif
+       break;
+     case 2:
+ #ifdef HAVE_SHM
+Index: /opt/code/mplayer-cvs/path.c
+===================================================================
+--- /opt/code/mplayer-cvs/path.c	(revision 38685)
++++ /opt/code/mplayer-cvs/path.c	(working copy)
+@@ -52,8 +52,12 @@
+ #ifdef __MINGW32__
+ 	const char *config_dir = "/mplayer";
+ #else
++#ifdef __AMIGAOS4__
++	const char *config_dir = "/conf";
++#else
+ 	const char *config_dir = "/.mplayer";
+ #endif
++#endif
+ 	int len;
+ #ifdef CONFIG_MACOSX_BUNDLE
+ 	struct stat dummy;
+@@ -64,9 +68,13 @@
+ 	char *bdl_url_path = NULL;
+ #endif
+ 
++#ifdef __AMIGAOS4__
++	if ((homedir = "/PROGDIR") == NULL)
++#else
+ 	if ((homedir = getenv("MPLAYER_HOME")) != NULL)
+ 		config_dir = "";
+ 	else if ((homedir = getenv("HOME")) == NULL)
++#endif
+ 	{
+ #if !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__OS2__)
+ 		return NULL;
+Index: /opt/code/mplayer-cvs/stream/cache2.c
+===================================================================
+--- /opt/code/mplayer-cvs/stream/cache2.c	(revision 38685)
++++ /opt/code/mplayer-cvs/stream/cache2.c	(working copy)
+@@ -56,6 +56,10 @@
+ #elif defined(PTHREAD_CACHE)
+ #include <pthread.h>
+ static void *ThreadProc(void *s);
++#elif defined(__amigaos4__)
++#include <proto/exec.h>
++#include <proto/dos.h>
++static void *ThreadProc(void *s);
+ #else
+ #include <sys/wait.h>
+ #define FORKED_CACHE 1
+@@ -70,6 +74,8 @@
+ #include "stream.h"
+ #include "cache2.h"
+ #include "mp_global.h"
++#ifdef __amigaos4__
++#endif
+ 
+ typedef struct {
+   // constats:
+@@ -112,6 +118,68 @@
+ #endif
+ }
+ 
++#ifdef __amigaos4__
++#include <proto/amisslmaster.h>
++#include <proto/amissl.h>
++#include <libraries/amisslmaster.h>
++#include <libraries/amissl.h>
++#include <amissl/tags.h>
++
++static struct Process *CurrentTask;
++static void     *cache_arg;
++static void *(*cache_proc) (void *s);
++
++#define GETINTERFACE(iface, base) (iface = (APTR)GetInterface((struct Library *)(base), "main", 1L, NULL))
++#define DROPINTERFACE(iface)      (DropInterface((struct Interface *)iface), iface = NULL)
++
++void thread_starter()
++{
++        void    *_cache_arg = cache_arg;
++        void *(*_cache_proc) (void *s) = cache_proc;
++
++        /* v144: IAmiSSL vom Hauptprozess direkt uebernehmen */
++        extern struct AmiSSLIFace *IAmiSSL;
++        extern struct AmiSSLIFace *main_IAmiSSL;
++        IAmiSSL = main_IAmiSSL;
++
++        Signal( CurrentTask, SIGF_CHILD );
++        _cache_proc(_cache_arg);
++}
++
++static void _kill_thread( ULONG pid)
++{
++//      printf("kill pid %08x\n",pid);
++        CurrentTask = FindTask(NULL);
++        Signal( pid, SIGBREAKF_CTRL_D );
++        Wait(SIGF_CHILD);
++//      Printf("kill pid: done\n");
++}
++
++ULONG _beginthread( void *(*ThreadProc) (void *s), ULONG x, ULONG stack , void *s )
++{
++//      ULONG output = Open("CON:",MODE_NEWFILE);
++        ULONG process;
++
++        cache_arg = s;
++        cache_proc = ThreadProc;
++
++        CurrentTask = FindTask(NULL);  // find caller task/process.
++
++        process = CreateNewProcTags(
++                                NP_Name, "Mplayer cache" ,
++                                NP_Entry, thread_starter,
++//                              NP_Output, output,
++                                NP_Priority, 0,
++                                NP_StackSize, stack,
++                                NP_Child, TRUE,
++                                TAG_END);
++
++        Wait(SIGF_CHILD);
++
++        return process;
++}
++#endif
++
+ static void cache_flush(cache_vars_t *s)
+ {
+   s->offset= // FIXME!?
+@@ -192,10 +260,18 @@
+       // issues with e.g. mov or badly interleaved files
+       if(read<s->min_filepos || read>=s->max_filepos+s->seek_limit)
+       {
+-        cache_flush(s);
+-        if(s->stream->eof) stream_reset(s->stream);
+-        stream_seek_internal(s->stream,read);
+-        mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
++        /* AmigaOS4: Skip seek for HTTPS streams to avoid AmiSSL race condition */
++        #ifdef __amigaos4__
++        extern char *filename;
++        int is_https = (s->stream->url && (strncmp(s->stream->url, "https://", 8) == 0));
++        if (!is_https)
++        #endif
++        {
++          cache_flush(s);
++          if(s->stream->eof) stream_reset(s->stream);
++          stream_seek_internal(s->stream,read);
++          mp_msg(MSGT_CACHE,MSGL_DBG2,"Seek done. new pos: 0x%"PRIX64"  \n",(int64_t)stream_tell(s->stream));
++        }
+       }
+   }
+ 
+@@ -396,8 +472,12 @@
+   cache_vars_t* c = s->cache_data;
+   if(s->cache_pid) {
+ #if !FORKED_CACHE
++#ifndef __amigaos4__
+     cache_do_control(s, -2, NULL);
+ #else
++    _kill_thread(s->cache_pid);
++#endif
++#else
+     kill(s->cache_pid,SIGKILL);
+     waitpid(s->cache_pid,NULL,0);
+ #endif
+@@ -450,6 +530,13 @@
+ #endif
+         } else
+             sleep_count = 0;
++#ifdef __amigaos4__
++        if ( SetSignal(0L, SIGBREAKF_CTRL_D) & SIGBREAKF_CTRL_D )
++        {
++                Signal(CurrentTask,SIGF_CHILD);
++                return ;
++        }
++#endif
+     } while (cache_execute_control(s));
+ }
+ 
+@@ -465,11 +552,27 @@
+     mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
+     return 1;
+   }
++  /* AmigaOS4: HTTPS Cache deaktivieren wegen IAmiSSL Multi-Task Problem */
++  #ifdef __amigaos4__
++  if (stream->url && strncmp(stream->url, "https://", 8) == 0) {
++    mp_msg(MSGT_CACHE,MSGL_STATUS,"\rHTTPS: Cache disabled on AmigaOS4\n");
++    return 1;
++  }
++  #endif
+   if (size > SIZE_MAX) {
+     mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
+     return -1;
+   }
+ 
++  /* v145: IAmiSSL vor Cache-Start sichern */
++  #ifdef __amigaos4__
++  {
++    extern struct AmiSSLIFace *IAmiSSL;
++    extern struct AmiSSLIFace *main_IAmiSSL;
++    if (IAmiSSL != NULL) main_IAmiSSL = IAmiSSL;
++  }
++  #endif
++
+   s=cache_init(size,ss);
+   if(s == NULL) return -1;
+   stream->cache_data=s;
+@@ -503,6 +606,8 @@
+     stream->cache_pid = _beginthread( ThreadProc, 0, s );
+ #elif defined(__OS2__)
+     stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
++#elif defined(__amigaos4__)
++    stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
+ #else
+     {
+     pthread_t tid;
+Index: /opt/code/mplayer-cvs/stream/url.c
+===================================================================
+--- /opt/code/mplayer-cvs/stream/url.c	(revision 38685)
++++ /opt/code/mplayer-cvs/stream/url.c	(working copy)
+@@ -32,6 +32,10 @@
+ #include "mp_strings.h"
+ #include "help_mp.h"
+ 
++#ifdef __AMIGAOS4__
++#include <limits.h>
++#endif
++
+ #ifndef SIZE_MAX
+ #define SIZE_MAX ((size_t)-1)
+ #endif
+Index: /opt/code/mplayer-cvs/sub/ass_mp.c
+===================================================================
+--- /opt/code/mplayer-cvs/sub/ass_mp.c	(revision 38685)
++++ /opt/code/mplayer-cvs/sub/ass_mp.c	(working copy)
+@@ -1,3 +1,5 @@
++#include "config.h"
++#ifdef CONFIG_ASS
+ /*
+  * Copyright (C) 2006 Evgeniy Stepanov <eugeni.stepanov@gmail.com>
+  *
+@@ -388,3 +390,5 @@
+ 	if (!eosd_registered(&eosd_ass))
+ 		eosd_register(&eosd_ass);
+ }
++
++#endif /* CONFIG_ASS */
