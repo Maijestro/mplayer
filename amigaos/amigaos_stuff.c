@@ -46,6 +46,8 @@
 
 /* ARexx */
 #include "arexx.h"
+
+#include "amiga_version.h"
 /* ARexx */
 
 APTR pr_WindowPtr;
@@ -546,6 +548,15 @@ void AmigaOS_Close(void)
 {
 	// Delay(10);
 DBUG("AmigaOS_Close()***\n",NULL);
+
+	/* v147: FFmpeg Netzwerk-Cleanup */
+#ifdef CONFIG_STREAM_FFMPEG
+	{
+		extern void avformat_network_deinit(void);
+		avformat_network_deinit();
+	}
+#endif
+
 	IIntuition = IIntuition_SDL_workaround;
 
 	if (!SCREENSHOTDIR)
@@ -743,10 +754,6 @@ DBUG("***AmigaOS_Open()\n",NULL);
 	pr_WindowPtr = ((struct Process *) current_task) -> pr_WindowPtr;
 	((struct Process *) current_task) -> pr_WindowPtr = -1L;	// Disable insert disk.
 
-#if HAVE_AREXX
-	StartArexx(); // start it ASAP, 'cos we need ARexxPortName
-#endif
-
 	TimerMsgPort = AllocSysObject(ASOT_PORT,NULL);
 	if ( !TimerMsgPort )
 	{
@@ -812,6 +819,10 @@ DBUG("***AmigaOS_Open()\n",NULL);
 	if ( ! open_lib( "icon.library",         51L, "main", 1, &IconBase, (struct Interface **) &IIcon ) ) return -1;
 	if ( ! open_lib( "datatypes.library",    51L, "main", 1, &DataTypesBase, (struct Interface **) &IDataTypes ) ) return -1;
 	if ( ! open_lib( "locale.library",        0L, "main", 1, &LocaleBase, (struct Interface **) &ILocale ) ) return -1;
+
+#if HAVE_AREXX
+StartArexx(); // start it ASAP after all libraries are open
+#endif
 
 // #if HAVE_AREXX
 //	StartArexx(current_task);
@@ -960,7 +971,6 @@ struct Window *AmigaOS_GetSDLWindowPtr(void)
   SDL_SysWMinfo wmInfo;
 
   if(SDL_GetWMInfo(&wmInfo) == 1) { return(wmInfo.window); }
-
   return(NULL);
 }
 

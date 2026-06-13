@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <time.h>
+// #include <time.h> -- not needed on AmigaOS4
 
 #include "config.h"
 #include "mp_msg.h"
@@ -40,6 +40,9 @@
 #if CONFIG_VDPAU
 #include "libavcodec/vdpau.h"
 #include "vdpau_frame_data.h"
+#endif
+#if CONFIG_VAAPI
+#include "libavcodec/vaapi.h"
 #endif
 #include "libavutil/pixdesc.h"
 
@@ -71,10 +74,6 @@ LIBVD_EXTERN(ffmpeg)
 #error palette too large, adapt libmpcodecs/vf.c:vf_get_image
 #endif
 
-#if CONFIG_XVMC
-#include "libavcodec/xvmc.h"
-#endif
-
 typedef struct {
     AVCodecContext *avctx;
     AVFrame *pic;
@@ -92,10 +91,16 @@ typedef struct {
     int b_count;
     AVRational last_sample_aspect_ratio;
     int palette_sent;
-    int use_vdpau;
+    enum {
+        HWACCEL_MODE_NONE,
+        HWACCEL_MODE_VDPAU,
+        HWACCEL_MODE_VAAPI,
+    } hwaccel_mode;
 } vd_ffmpeg_ctx;
 
 #include "m_option.h"
+/* Global VAAPI hw_device_ctx - shared with vo_vaapi.c */
+AVBufferRef *vaapi_hw_device_ctx = NULL;
 
 static int get_buffer(AVCodecContext *avctx, AVFrame *pic, int isreference);
 static int mpcodec_default_get_buffer(AVCodecContext *avctx, AVFrame *frame);
@@ -191,11 +196,6 @@ static int control(sh_video_t *sh, int cmd, void *arg, ...){
             if(ctx->best_csp == IMGFMT_YV12) return CONTROL_TRUE;// u/v swap
             if(ctx->best_csp == IMGFMT_422P && !ctx->do_dr1) return CONTROL_TRUE;// half stride
             break;
-#if CONFIG_XVMC
-        case IMGFMT_XVMC_IDCT_MPEG2:
-        case IMGFMT_XVMC_MOCO_MPEG2:
-            if(avctx->pix_fmt == AV_PIX_FMT_XVMC) return CONTROL_TRUE;
-#endif
         }
         return CONTROL_FALSE;
     }
@@ -239,6 +239,15 @@ static int pixfmt2imgfmt2(enum AVPixelFormat fmt, enum AVCodecID cid)
         case AV_CODEC_ID_WMV3:       return IMGFMT_VDPAU_WMV3;
         case AV_CODEC_ID_VC1:        return IMGFMT_VDPAU_VC1;
         case AV_CODEC_ID_HEVC:       return IMGFMT_VDPAU_HEVC;
+        }
+    if (fmt == AV_PIX_FMT_VAAPI)
+        switch (cid) {
+        case AV_CODEC_ID_H264:       return IMGFMT_VAAPI_H264;
+        case AV_CODEC_ID_MPEG2VIDEO: return IMGFMT_VAAPI_MPEG2;
+        case AV_CODEC_ID_MPEG4:      return IMGFMT_VAAPI_MPEG4;
+        case AV_CODEC_ID_WMV3:       return IMGFMT_VAAPI_WMV3;
+        case AV_CODEC_ID_VC1:        return IMGFMT_VAAPI_VC1;
+        case AV_CODEC_ID_HEVC:       return IMGFMT_VAAPI_HEVC;
         }
     return pixfmt2imgfmt(fmt);
 }
@@ -285,26 +294,95 @@ static void set_format_params(struct AVCodecContext *avctx,
     int imgfmt;
     if (fmt == AV_PIX_FMT_NONE)
         return;
-    ctx->use_vdpau = fmt == AV_PIX_FMT_VDPAU;
     imgfmt = pixfmt2imgfmt2(fmt, avctx->codec_id);
+    switch(fmt) {
 #if CONFIG_VDPAU
-    if (!ctx->use_vdpau) {
-        av_freep(&avctx->hwaccel_context);
-    } else {
-        AVVDPAUContext *vdpc = avctx->hwaccel_context;
-        if (!vdpc)
-            avctx->hwaccel_context = vdpc = av_alloc_vdpaucontext();
-        vdpc->render2 = vdpau_render_wrapper;
-    }
+    case AV_PIX_FMT_VDPAU:
+        ctx->hwaccel_mode = HWACCEL_MODE_VDPAU;
+        {
+            AVVDPAUContext *vdpc = avctx->hwaccel_context;
+            if (!vdpc)
+                avctx->hwaccel_context = vdpc = av_alloc_vdpaucontext();
+            vdpc->render2 = vdpau_render_wrapper;
+        }
+        break;
 #endif
+#if CONFIG_VAAPI
+    case AV_PIX_FMT_VAAPI:
+        ctx->hwaccel_mode = HWACCEL_MODE_VAAPI;
+        {
+            if (!avctx->hw_device_ctx) {
+                AVBufferRef *hw_device_ctx = NULL;
+                int err = av_hwdevice_ctx_create(&hw_device_ctx,
+                                                 AV_HWDEVICE_TYPE_VAAPI,
+                                                 NULL, NULL, 0);
+                if (err < 0) {
+                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
+                           "[VD_FFMPEG] av_hwdevice_ctx_create failed: %d\n", err);
+                    break;
+                }
+                avctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+                if (vaapi_hw_device_ctx) { av_buffer_unref(&vaapi_hw_device_ctx); vaapi_hw_device_ctx = NULL; }
+                vaapi_hw_device_ctx = av_buffer_ref(hw_device_ctx);
+                av_buffer_unref(&hw_device_ctx);
+            }
+            /* Must set hw_frames_ctx in get_format() for FFmpeg 5+ */
+            {
+                AVBufferRef *hw_frames_ref = av_hwframe_ctx_alloc(avctx->hw_device_ctx);
+                if (!hw_frames_ref) {
+                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
+                           "[VD_FFMPEG] av_hwframe_ctx_alloc failed\n");
+                    break;
+                }
+                AVHWFramesContext *frames_ctx =
+                    (AVHWFramesContext *)hw_frames_ref->data;
+                frames_ctx->format    = AV_PIX_FMT_VAAPI;
+                frames_ctx->sw_format = AV_PIX_FMT_NV12;
+                frames_ctx->width     = avctx->coded_width;
+                frames_ctx->height    = avctx->coded_height;
+                /* Pool size based on resolution: 4K needs fewer surfaces */
+                {
+                    int w = avctx->coded_width;
+                    int h = avctx->coded_height;
+                    if (w >= 3840 || h >= 2160)
+                        frames_ctx->initial_pool_size = 8;
+                    else if (w >= 1920 || h >= 1080)
+                        frames_ctx->initial_pool_size = 8;
+                    else
+                        frames_ctx->initial_pool_size = 12;
+                }
+                int err2 = av_hwframe_ctx_init(hw_frames_ref);
+                if (err2 < 0) {
+                    mp_msg(MSGT_DECVIDEO, MSGL_ERR,
+                           "[VD_FFMPEG] av_hwframe_ctx_init failed: %d\n", err2);
+                    av_buffer_unref(&hw_frames_ref);
+                    break;
+                }
+                av_buffer_unref(&avctx->hw_frames_ctx);
+                avctx->hw_frames_ctx = hw_frames_ref;
+            }
+        }
+        break;
+#endif
+    default:
+        ctx->hwaccel_mode = HWACCEL_MODE_NONE;
+        av_freep(&avctx->hwaccel_context);
+        break;
+    }
     if (IMGFMT_IS_HWACCEL(imgfmt)) {
         ctx->do_dr1    = 1;
         ctx->nonref_dr = 0;
-        avctx->get_buffer2 = get_buffer2;
-        mp_msg(MSGT_DECVIDEO, MSGL_V, IMGFMT_IS_XVMC(imgfmt) ?
-               MSGTR_MPCODECS_XVMCAcceleratedMPEG2 :
-               "[VD_FFMPEG] VDPAU accelerated decoding\n");
-        if (ctx->use_vdpau) {
+        /* VAAPI with hw_device_ctx: FFmpeg manages buffers, use default */
+        if (ctx->hwaccel_mode == HWACCEL_MODE_VAAPI)
+            avctx->get_buffer2 = avcodec_default_get_buffer2;
+        else
+            avctx->get_buffer2 = get_buffer2;
+        if (ctx->hwaccel_mode == HWACCEL_MODE_VDPAU ||
+            ctx->hwaccel_mode == HWACCEL_MODE_VAAPI) {
+            mp_msg(MSGT_DECVIDEO, MSGL_V,
+                   ctx->hwaccel_mode == HWACCEL_MODE_VDPAU ?
+                   "[VD_FFMPEG] VDPAU accelerated decoding\n" :
+                   "[VD_FFMPEG] VAAPI accelerated decoding\n");
             avctx->draw_horiz_band = NULL;
             avctx->slice_flags = 0;
             ctx->do_slices = 0;
@@ -349,6 +427,24 @@ static int init(sh_video_t *sh){
 
     avctx->get_format = get_format;
     avctx->flags|= lavc_param_bitexact;
+
+#if CONFIG_VAAPI
+    /* Set hw_device_ctx before avcodec_open2 so get_format can use VAAPI */
+    {
+        AVBufferRef *hw_device_ctx = NULL;
+        int err = av_hwdevice_ctx_create(&hw_device_ctx,
+                                         AV_HWDEVICE_TYPE_VAAPI,
+                                         NULL, NULL, 0);
+        if (err < 0) {
+            mp_msg(MSGT_DECVIDEO, MSGL_WARN,
+                   "[VD_FFMPEG] av_hwdevice_ctx_create failed: %d\n", err);
+        } else {
+            avctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+            vaapi_hw_device_ctx = av_buffer_ref(hw_device_ctx);
+            av_buffer_unref(&hw_device_ctx);
+        }
+    }
+#endif
 
     avctx->coded_width = sh->disp_w;
     avctx->coded_height= sh->disp_h;
@@ -483,7 +579,7 @@ static int init(sh_video_t *sh){
 
     set_dr_slice_settings(avctx, lavc_codec);
     avctx->thread_count = lavc_param_threads;
-    avctx->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
+    avctx->thread_type = FF_THREAD_SLICE;
     av_dict_set(&opts, "refcounted_frames", "1", 0);
 
     /* open it */
@@ -505,33 +601,58 @@ static void uninit(sh_video_t *sh){
     vd_ffmpeg_ctx *ctx = sh->context;
     AVCodecContext *avctx = ctx->avctx;
 
+    /* Step 1: Unref all frames to release VAAPI surfaces back to pool */
     if (ctx->refcount_frame) {
         av_frame_unref(ctx->refcount_frame);
         ctx->refcount_frame = NULL;
     }
+    if (ctx->pic)
+        av_frame_unref(ctx->pic);
+
+    /* Step 2: Flush decoder - releases all internal buffered frames */
+    if (avctx && avctx->codec)
+        avcodec_flush_buffers(avctx);
+
+    /* Step 2b: Free pic frame container after flush */
+    if (ctx->pic) {
+        av_frame_free(&ctx->pic);
+        ctx->pic = NULL;
+    }
+
     if(lavc_param_vstats){
         int i;
         for(i=0; i<32; i++){
             mp_msg(MSGT_DECVIDEO, MSGL_INFO, "QP: %d, count: %d\n", i, ctx->qp_stat[i]);
         }
         mp_msg(MSGT_DECVIDEO, MSGL_INFO, MSGTR_MPCODECS_ArithmeticMeanOfQP,
-            ctx->qp_sum / avctx->frame_number,
-            1.0/(ctx->inv_qp_sum / avctx->frame_number)
+            ctx->qp_sum / avctx->frame_num,
+            1.0/(ctx->inv_qp_sum / avctx->frame_num)
             );
     }
 
+    /* Step 3: Close codec */
     if (avctx) {
         if (avctx->codec && avcodec_close(avctx) < 0)
             mp_msg(MSGT_DECVIDEO, MSGL_ERR, MSGTR_CantCloseCodec);
-
         av_freep(&avctx->extradata);
         av_freep(&avctx->hwaccel_context);
-        av_freep(&avctx->slice_offset);
     }
 
+    /* Step 4: Release HW contexts after codec closed */
+    if (avctx) {
+        av_buffer_unref(&avctx->hw_frames_ctx);
+        av_buffer_unref(&avctx->hw_device_ctx);
+    }
+
+    /* Step 5: Free codec context */
     avcodec_free_context(&avctx);
-    av_frame_free(&ctx->pic);
     free(ctx);
+
+    /* Step 6: Free shared VAAPI hw_device_ctx */
+    if (vaapi_hw_device_ctx) {
+        av_buffer_unref(&vaapi_hw_device_ctx);
+        vaapi_hw_device_ctx = NULL;
+    }
 }
 
 static void draw_slice(struct AVCodecContext *s,
@@ -546,8 +667,8 @@ static void draw_slice(struct AVCodecContext *s,
         mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called with NULL pointer!\n");
         return;
     }
-    if (mpi && ctx->use_vdpau) {
-        mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called for VDPAU!\n");
+    if (mpi && ctx->hwaccel_mode != HWACCEL_MODE_NONE) {
+        mp_msg(MSGT_DECVIDEO, MSGL_FATAL, "BUG in FFmpeg, draw_slice called in hwaccel mode!\n");
         return;
     }
     if (height < 0)
@@ -735,29 +856,25 @@ static int get_buffer(AVCodecContext *avctx, AVFrame *pic, int isreference){
         avctx->draw_horiz_band= draw_slice;
     } else
         avctx->draw_horiz_band= NULL;
+    switch(ctx->hwaccel_mode) {
 #if CONFIG_VDPAU
-    if (ctx->use_vdpau) {
-        VdpVideoSurface surface = (VdpVideoSurface)mpi->priv;
-        avctx->draw_horiz_band= NULL;
-        mpi->planes[3] = surface;
-    }
-#endif
-#if CONFIG_XVMC
-    if(IMGFMT_IS_XVMC(mpi->imgfmt)) {
-        struct xvmc_pix_fmt *render = mpi->priv; //same as data[2]
-        if(!(mpi->flags & MP_IMGFLAG_DIRECT)) {
-            mp_msg(MSGT_DECVIDEO, MSGL_ERR, MSGTR_MPCODECS_OnlyBuffersAllocatedByVoXvmcAllowed);
-            assert(0);
-            return -1;//!!fixme check error conditions in ffmpeg
+    case HWACCEL_MODE_VDPAU:
+        {
+            VdpVideoSurface surface = (VdpVideoSurface)mpi->priv;
+            avctx->draw_horiz_band= NULL;
+            mpi->planes[3] = surface;
         }
-        if(mp_msg_test(MSGT_DECVIDEO, MSGL_DBG5))
-            mp_msg(MSGT_DECVIDEO, MSGL_DBG5, "vd_ffmpeg::get_buffer (xvmc render=%p)\n", render);
-        assert(render != 0);
-        assert(render->xvmc_id == AV_XVMC_ID);
-        avctx->draw_horiz_band= draw_slice;
-    }
+        break;
 #endif
-
+#if CONFIG_VAAPI
+    case HWACCEL_MODE_VAAPI:
+        {
+            // This is the VASurfaceID.
+            mpi->planes[3] = mpi->priv;
+        }
+        break;
+#endif
+    }
     pic->data[0]= mpi->planes[0];
     pic->data[1]= mpi->planes[1];
     pic->data[2]= mpi->planes[2];
@@ -820,6 +937,9 @@ static void release_buffer(struct AVCodecContext *avctx, AVFrame *pic){
     sh_video_t *sh = avctx->opaque;
     vd_ffmpeg_ctx *ctx = sh->context;
     int i;
+
+/* VAAPI surfaces managed by FFmpeg hw_device_ctx - no manual release needed */
+
     if (pic->opaque == NULL) {
         mpcodec_default_release_buffer(avctx, pic);
         return;
@@ -949,6 +1069,7 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
     if(ret<0) mp_msg(MSGT_DECVIDEO, MSGL_WARN, "Error while decoding frame! (%i)\n", ret);
 //printf("repeat: %d\n", pic->repeat_pict);
 //-- vstats generation
+#ifndef __amigaos4__
     while(lavc_param_vstats){ // always one time loop
         static FILE *fvstats=NULL;
         char filename[20];
@@ -1025,6 +1146,7 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
 
         break;
     }
+#endif /* !__amigaos4__ */
 //--
 
     if(!got_picture) {
@@ -1061,13 +1183,18 @@ static mp_image_t *decode(sh_video_t *sh, void *data, int len, int flags){
         mpi->planes[1]=pic->data[1];
         mpi->planes[2]=pic->data[2];
         mpi->planes[3]=pic->data[3];
+        if (pic->data[3])
+            mp_msg(MSGT_DECVIDEO, MSGL_INFO,
+                   "[VD_FFMPEG] frame planes[3]=0x%lx imgfmt=0x%x flags=0x%x\n",
+                   (unsigned long)pic->data[3], mpi->imgfmt, mpi->flags);
         mpi->stride[0]=pic->linesize[0];
         mpi->stride[1]=pic->linesize[1];
         mpi->stride[2]=pic->linesize[2];
         mpi->stride[3]=pic->linesize[3];
     }
 
-    if (!mpi->planes[0])
+    /* HW frames have no planes[0] — surface ID is in planes[3] */
+    if (!mpi->planes[0] && !mpi->planes[3])
         return NULL;
 
     if(ctx->best_csp == IMGFMT_422P && mpi->chroma_y_shift==1){
