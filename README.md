@@ -157,7 +157,7 @@ Cross-compiled with ppc-amigaos-gcc under Linux:
 
 If you find this useful, donations are welcome — but please also consider
 supporting the original MPlayer and smarkusg AmigaOS4 developers:
-https://www.paypal.me/Maijestro
+https://www.paypal.com/paypalme/Maijetsro
 
 
 ## License
