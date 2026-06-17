@@ -1,7 +1,7 @@
-Index: /opt/code/mplayer-cvs/.gitignore
+Index: .gitignore
 ===================================================================
---- /opt/code/mplayer-cvs/.gitignore	(revision 38685)
-+++ /opt/code/mplayer-cvs/.gitignore	(working copy)
+--- .gitignore	(revision 38685)
++++ .gitignore	(working copy)
 @@ -1,59 +1,18 @@
 -*.[od]
 -*.exe
@@ -79,10 +79,10 @@ Index: /opt/code/mplayer-cvs/.gitignore
 -TOOLS/vivodump
 -vidix/pci_*.[ch]
 -vidix/dhahelperwin/dhahelper.sys
-Index: /opt/code/mplayer-cvs/Makefile
+Index: Makefile
 ===================================================================
---- /opt/code/mplayer-cvs/Makefile	(revision 38685)
-+++ /opt/code/mplayer-cvs/Makefile	(working copy)
+--- Makefile	(revision 38685)
++++ Makefile	(working copy)
 @@ -441,7 +441,7 @@
                sub/subreader.c                   \
                sub/vobsub.c                      \
@@ -134,10 +134,10 @@ Index: /opt/code/mplayer-cvs/Makefile
  	$(MAKE) -C ffmpeg $(@:ffmpeg/%=%)
  
  mencoder$(EXESUF): $(MENCODER_DEPS)
-Index: /opt/code/mplayer-cvs/codec-cfg.c
+Index: codec-cfg.c
 ===================================================================
---- /opt/code/mplayer-cvs/codec-cfg.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/codec-cfg.c	(working copy)
+--- codec-cfg.c	(revision 38685)
++++ codec-cfg.c	(working copy)
 @@ -262,6 +262,13 @@
      {"VDPAU_MPEG4", IMGFMT_VDPAU_MPEG4},
      {"VDPAU_HEVC",  IMGFMT_VDPAU_HEVC},
@@ -152,10 +152,10 @@ Index: /opt/code/mplayer-cvs/codec-cfg.c
      {NULL,    0}
  };
  
-Index: /opt/code/mplayer-cvs/command.c
+Index: command.c
 ===================================================================
---- /opt/code/mplayer-cvs/command.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/command.c	(working copy)
+--- command.c	(revision 38685)
++++ command.c	(working copy)
 @@ -3371,7 +3371,7 @@
              break;
  
@@ -165,10 +165,10 @@ Index: /opt/code/mplayer-cvs/command.c
              if (!fork()) {
                  char *exp_cmd = property_expand_string(mpctx, cmd->args[0].v.s);
                  if (exp_cmd) {
-Index: /opt/code/mplayer-cvs/configure
+Index: configure
 ===================================================================
---- /opt/code/mplayer-cvs/configure	(revision 38685)
-+++ /opt/code/mplayer-cvs/configure	(working copy)
+--- configure	(revision 38685)
++++ configure	(working copy)
 @@ -500,6 +500,7 @@
    --enable-xv              enable Xv video output [autodetect]
    --enable-vda             enable VDA acceleration [autodetect]
@@ -286,10 +286,10 @@ Index: /opt/code/mplayer-cvs/configure
  #define CONFIG_VALGRIND_BACKTRACE 0
  
  /* related to HW accelarations */
-Index: /opt/code/mplayer-cvs/etc/codecs.conf
+Index: etc/codecs.conf
 ===================================================================
---- /opt/code/mplayer-cvs/etc/codecs.conf	(revision 38685)
-+++ /opt/code/mplayer-cvs/etc/codecs.conf	(working copy)
+--- etc/codecs.conf	(revision 38685)
++++ etc/codecs.conf	(working copy)
 @@ -500,6 +500,7 @@
    dll "mpeg2video"
    out YV12,I420,IYUV
@@ -338,10 +338,10 @@ Index: /opt/code/mplayer-cvs/etc/codecs.conf
  
  videocodec ffodivxvdpau
    info "FFmpeg MPEG-4,DIVX-4/5 (VDPAU)"
-Index: /opt/code/mplayer-cvs/fmt-conversion.c
+Index: fmt-conversion.c
 ===================================================================
---- /opt/code/mplayer-cvs/fmt-conversion.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/fmt-conversion.c	(working copy)
+--- fmt-conversion.c	(revision 38685)
++++ fmt-conversion.c	(working copy)
 @@ -146,6 +146,7 @@
      int i;
      enum AVPixelFormat pix_fmt;
@@ -350,10 +350,10 @@ Index: /opt/code/mplayer-cvs/fmt-conversion.c
      for (i = 0; conversion_map[i].fmt; i++)
          if (conversion_map[i].fmt == fmt)
              break;
-Index: /opt/code/mplayer-cvs/input/input.c
+Index: input/input.c
 ===================================================================
---- /opt/code/mplayer-cvs/input/input.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/input/input.c	(working copy)
+--- input/input.c	(revision 38685)
++++ input/input.c	(working copy)
 @@ -71,7 +71,7 @@
  /// For the args, the first field is the type (actually int, float or string), the second
  /// is the default value which is used for optional arguments
@@ -413,10 +413,10 @@ Index: /opt/code/mplayer-cvs/input/input.c
  	} else if (time)
  	    usec_sleep(time * 1000);
      }
-Index: /opt/code/mplayer-cvs/libaf/af.c
+Index: libaf/af.c
 ===================================================================
---- /opt/code/mplayer-cvs/libaf/af.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libaf/af.c	(working copy)
+--- libaf/af.c	(revision 38685)
++++ libaf/af.c	(working copy)
 @@ -69,9 +69,7 @@
     &af_info_pan,
     &af_info_surround,
@@ -427,10 +427,10 @@ Index: /opt/code/mplayer-cvs/libaf/af.c
     &af_info_volnorm,
     &af_info_extrastereo,
  #ifdef CONFIG_FFMPEG
-Index: /opt/code/mplayer-cvs/libaf/af_export.c
+Index: libaf/af_export.c
 ===================================================================
---- /opt/code/mplayer-cvs/libaf/af_export.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libaf/af_export.c	(working copy)
+--- libaf/af_export.c	(revision 38685)
++++ libaf/af_export.c	(working copy)
 @@ -1,29 +1,6 @@
  /*
 - * This audio filter exports the incoming signal to other processes
@@ -833,10 +833,10 @@ Index: /opt/code/mplayer-cvs/libaf/af_export.c
 +  AF_FLAGS_REENTRANT,
 +  af_open
  };
-Index: /opt/code/mplayer-cvs/libao2/ao_sdl.c
+Index: libao2/ao_sdl.c
 ===================================================================
---- /opt/code/mplayer-cvs/libao2/ao_sdl.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libao2/ao_sdl.c	(working copy)
+--- libao2/ao_sdl.c	(revision 38685)
++++ libao2/ao_sdl.c	(working copy)
 @@ -127,6 +127,10 @@
  		aspec.format = AUDIO_U8;
  	    break;
@@ -867,10 +867,10 @@ Index: /opt/code/mplayer-cvs/libao2/ao_sdl.c
 -    return (float)(buffered + ao_data.buffersize)/(float)ao_data.bps;
 +    return (float)(buffered + abs(ao_data.buffersize))/(float)ao_data.bps;
  }
-Index: /opt/code/mplayer-cvs/libao2/audio_out.c
+Index: libao2/audio_out.c
 ===================================================================
---- /opt/code/mplayer-cvs/libao2/audio_out.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libao2/audio_out.c	(working copy)
+--- libao2/audio_out.c	(revision 38685)
++++ libao2/audio_out.c	(working copy)
 @@ -55,6 +55,10 @@
  extern const ao_functions_t audio_out_pcm;
  extern const ao_functions_t audio_out_pss;
@@ -892,10 +892,10 @@ Index: /opt/code/mplayer-cvs/libao2/audio_out.c
          &audio_out_null,
  // should not be auto-selected:
          &audio_out_pcm,
-Index: /opt/code/mplayer-cvs/libmenu/menu_console.c
+Index: libmenu/menu_console.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmenu/menu_console.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmenu/menu_console.c	(working copy)
+--- libmenu/menu_console.c	(revision 38685)
++++ libmenu/menu_console.c	(working copy)
 @@ -38,6 +38,10 @@
  #include <unistd.h>
  #include <errno.h>
@@ -969,10 +969,10 @@ Index: /opt/code/mplayer-cvs/libmenu/menu_console.c
    return 1;
  }
  
-Index: /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c
+Index: libmpcodecs/ad_mpg123.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c	(working copy)
+--- libmpcodecs/ad_mpg123.c	(revision 38685)
++++ libmpcodecs/ad_mpg123.c	(working copy)
 @@ -18,6 +18,10 @@
   * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
   */
@@ -984,10 +984,10 @@ Index: /opt/code/mplayer-cvs/libmpcodecs/ad_mpg123.c
  #include <stdio.h>
  #include <stdlib.h>
  #include <unistd.h>
-Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.c
+Index: libmpcodecs/img_format.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpcodecs/img_format.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpcodecs/img_format.c	(working copy)
+--- libmpcodecs/img_format.c	(revision 38685)
++++ libmpcodecs/img_format.c	(working copy)
 @@ -146,6 +146,12 @@
      case IMGFMT_VDPAU_WMV3:      return "WMV3 VDPAU acceleration";
      case IMGFMT_VDPAU_VC1:       return "VC1 VDPAU acceleration";
@@ -1001,10 +1001,10 @@ Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.c
      }
      snprintf(unknown_format,20,"Unknown 0x%04x",format);
      return unknown_format;
-Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.h
+Index: libmpcodecs/img_format.h
 ===================================================================
---- /opt/code/mplayer-cvs/libmpcodecs/img_format.h	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpcodecs/img_format.h	(working copy)
+--- libmpcodecs/img_format.h	(revision 38685)
++++ libmpcodecs/img_format.h	(working copy)
 @@ -296,8 +296,19 @@
  #define IMGFMT_VDPAU_MPEG4         (IMGFMT_VDPAU|0x06)
  #define IMGFMT_VDPAU_HEVC          (IMGFMT_VDPAU|0x07)
@@ -1026,10 +1026,10 @@ Index: /opt/code/mplayer-cvs/libmpcodecs/img_format.h
  typedef struct {
      void* data;
      int size;
-Index: /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c
+Index: libmpcodecs/vd_ffmpeg.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c	(working copy)
+--- libmpcodecs/vd_ffmpeg.c	(revision 38685)
++++ libmpcodecs/vd_ffmpeg.c	(working copy)
 @@ -19,7 +19,7 @@
  #include <stdio.h>
  #include <stdlib.h>
@@ -1372,10 +1372,10 @@ Index: /opt/code/mplayer-cvs/libmpcodecs/vd_ffmpeg.c
          return NULL;
  
      if(ctx->best_csp == IMGFMT_422P && mpi->chroma_y_shift==1){
-Index: /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c
+Index: libmpcodecs/vf_vo.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c	(working copy)
+--- libmpcodecs/vf_vo.c	(revision 38685)
++++ libmpcodecs/vf_vo.c	(working copy)
 @@ -28,6 +28,7 @@
  
  #include "sub/sub.h"
@@ -1436,50 +1436,23 @@ Index: /opt/code/mplayer-cvs/libmpcodecs/vf_vo.c
      if(vf->default_caps&VFCAP_ACCEPT_STRIDE)
          video_out->draw_slice(mpi->planes,mpi->stride,mpi->w,mpi->h,mpi->x,mpi->y);
      else
-Index: /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c
+Index: libmpdemux/demux_lavf.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpdemux/demux_lavf.c	(working copy)
-@@ -220,6 +220,14 @@
-             avformat_network_init();
-             priv->use_lavf_netstream  = 1;
+--- libmpdemux/demux_lavf.c	(revision 38685)
++++ libmpdemux/demux_lavf.c	(working copy)
+@@ -378,7 +378,7 @@
          }
-+        /* AmigaOS4: HTTPS direkt via FFmpeg oeffnen fuer besseres Buffering */
-+        #ifdef __amigaos4__
-+        if (demuxer->stream->url && strncmp(demuxer->stream->url, "https://", 8) == 0) {
-+            mp_msg(MSGT_HEADER,MSGL_V,"LAVF: HTTPS direct FFmpeg streaming (AmigaOS4)\n");
-+            avformat_network_init();
-+            priv->use_lavf_netstream = 1;
-+        }
-+        #endif
-     }
- 
-     return DEMUXER_TYPE_LAVF;
-@@ -686,6 +694,7 @@
- 
-     demux->filepos=stream_tell(demux->stream);
- 
-+    memset(&pkt, 0, sizeof(pkt));
-     if(av_read_frame(priv->avfc, &pkt) < 0)
-         return 0;
- 
-@@ -947,8 +956,10 @@
-          av_freep(&priv->avfc->key);
-          avformat_close_input(&priv->avfc);
-         }
--        if (priv->pb) av_freep(&priv->pb->buffer);
--        av_freep(&priv->pb);
-+        if (priv->pb) {
-+            av_freep(&priv->pb->buffer);
-+            avio_context_free(&priv->pb);
-+        }
-         free(priv); demuxer->priv= NULL;
-     }
- }
-Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.c
+         case AVMEDIA_TYPE_VIDEO:{
+             AVDictionaryEntry *rot = av_dict_get(st->metadata, "rotate",   NULL, 0);
+-            const int32_t *disp_matrix = (const int32_t *)av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
++            const int32_t *disp_matrix = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, NULL);
+             sh_video_t* sh_video;
+             BITMAPINFOHEADER *bih;
+             sh_video=new_sh_video_vid(demuxer, i, priv->video_streams);
+Index: libmpdemux/demuxer.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpdemux/demuxer.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpdemux/demuxer.c	(working copy)
+--- libmpdemux/demuxer.c	(revision 38685)
++++ libmpdemux/demuxer.c	(working copy)
 @@ -113,6 +113,7 @@
  extern const demuxer_desc_t demuxer_desc_aac;
  extern const demuxer_desc_t demuxer_desc_nut;
@@ -1507,10 +1480,10 @@ Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.c
      /* Please do not add any new demuxers here. If you want to implement a new
       * demuxer, add it to libavformat, except for wrappers around external
       * libraries and demuxers requiring binary support. */
-Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.h
+Index: libmpdemux/demuxer.h
 ===================================================================
---- /opt/code/mplayer-cvs/libmpdemux/demuxer.h	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpdemux/demuxer.h	(working copy)
+--- libmpdemux/demuxer.h	(revision 38685)
++++ libmpdemux/demuxer.h	(working copy)
 @@ -28,6 +28,10 @@
  #include "sub/ass_mp.h"
  #include "m_option.h"
@@ -1547,10 +1520,10 @@ Index: /opt/code/mplayer-cvs/libmpdemux/demuxer.h
  
  #define DEMUXER_TYPE_DEMUXERS (1<<16)
  // A virtual demuxer type for the network code
-Index: /opt/code/mplayer-cvs/libmpdemux/extension.c
+Index: libmpdemux/extension.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpdemux/extension.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpdemux/extension.c	(working copy)
+--- libmpdemux/extension.c	(revision 38685)
++++ libmpdemux/extension.c	(working copy)
 @@ -63,10 +63,10 @@
          { "ogm", DEMUXER_TYPE_OGG },
  //        { "pls", DEMUXER_TYPE_PLAYLIST },
@@ -1566,10 +1539,10 @@ Index: /opt/code/mplayer-cvs/libmpdemux/extension.c
          { "mid", DEMUXER_TYPE_XMMS },
          { "midi", DEMUXER_TYPE_XMMS },
          { "nsv", DEMUXER_TYPE_NSV },
-Index: /opt/code/mplayer-cvs/libmpeg2/cpu_state.c
+Index: libmpeg2/cpu_state.c
 ===================================================================
---- /opt/code/mplayer-cvs/libmpeg2/cpu_state.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libmpeg2/cpu_state.c	(working copy)
+--- libmpeg2/cpu_state.c	(revision 38685)
++++ libmpeg2/cpu_state.c	(working copy)
 @@ -43,7 +43,7 @@
  }
  #endif
@@ -1588,10 +1561,10 @@ Index: /opt/code/mplayer-cvs/libmpeg2/cpu_state.c
      if (accel & MPEG2_ACCEL_PPC_ALTIVEC) {
  	mpeg2_cpu_state_save = state_save_altivec;
  	mpeg2_cpu_state_restore = state_restore_altivec;
-Index: /opt/code/mplayer-cvs/libvo/video_out.c
+Index: libvo/video_out.c
 ===================================================================
---- /opt/code/mplayer-cvs/libvo/video_out.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libvo/video_out.c	(working copy)
+--- libvo/video_out.c	(revision 38685)
++++ libvo/video_out.c	(working copy)
 @@ -142,6 +142,16 @@
  extern const vo_functions_t video_out_md5sum;
  extern const vo_functions_t video_out_mng;
@@ -1691,10 +1664,10 @@ Index: /opt/code/mplayer-cvs/libvo/video_out.c
  const vo_functions_t* init_best_video_out(char** vo_list){
      int i;
      // first try the preferred drivers, with their optional subdevice param:
-Index: /opt/code/mplayer-cvs/libvo/vo_sdl.c
+Index: libvo/vo_sdl.c
 ===================================================================
---- /opt/code/mplayer-cvs/libvo/vo_sdl.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/libvo/vo_sdl.c	(working copy)
+--- libvo/vo_sdl.c	(revision 38685)
++++ libvo/vo_sdl.c	(working copy)
 @@ -509,7 +509,11 @@
  	aspect_save_screenres(screen_surface_w, screen_surface_h);
  
@@ -1750,10 +1723,10 @@ Index: /opt/code/mplayer-cvs/libvo/vo_sdl.c
      }
  
      SDL_VideoDriverName(priv->driver, 8);
-Index: /opt/code/mplayer-cvs/mpcommon.c
+Index: mpcommon.c
 ===================================================================
---- /opt/code/mplayer-cvs/mpcommon.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/mpcommon.c	(working copy)
+--- mpcommon.c	(revision 38685)
++++ mpcommon.c	(working copy)
 @@ -620,10 +620,12 @@
                         filename_recode(font_name));
          } else {
@@ -1782,10 +1755,10 @@ Index: /opt/code/mplayer-cvs/mpcommon.c
  #ifdef CONFIG_FREETYPE
      current_module = "uninit_font";
      if (sub_font && sub_font != vo_font)
-Index: /opt/code/mplayer-cvs/mplayer.c
+Index: mplayer.c
 ===================================================================
---- /opt/code/mplayer-cvs/mplayer.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/mplayer.c	(working copy)
+--- mplayer.c	(revision 38685)
++++ mplayer.c	(working copy)
 @@ -31,6 +31,13 @@
  #include <sys/stat.h>
  #include <sys/types.h>
@@ -1904,29 +1877,28 @@ Index: /opt/code/mplayer-cvs/mplayer.c
      // TODO: use newer POSIX SIG_IGN behaviour instead to
      // automatically handle children?
      signal(SIGCHLD, child_sighandler);
-@@ -3378,6 +3413,13 @@
+@@ -3378,6 +3413,12 @@
  // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
  goto_enable_cache:
      if (stream_cache_size > 0) {
 +#ifdef __amigaos4__
-+        /* AmigaOS4: Cache deaktiviert - Single-Core IPC Race Condition
-+         * Der Cache-Prozess laeuft via CreateNewProcTags und teilt den
-+         * Adressraum, aber ohne Mutex-Schutz kommt es zu Datenkorrruption.
-+         * Lokales Filesystem ist schnell genug ohne Cache. */
-+        mp_msg(MSGT_CACHE, MSGL_WARN, "AmigaOS4: -cache nicht unterstuetzt (Race Condition), wird ignoriert.\n");
-+#else
++        if (mpctx->stream->type != STREAMTYPE_STREAM && !(mpctx->stream->url && strncmp(mpctx->stream->url, "https://", 8) == 0) && !(mpctx->stream->url && strncmp(mpctx->stream->url, "http://", 7) == 0) && !(mpctx->stream->url && strstr(mpctx->stream->url, ".m3u8") != NULL)) {
++            mp_msg(MSGT_CACHE, MSGL_WARN, "AmigaOS4: -cache nur fuer Netzwerk-Streams.\n");
++            goto goto_open_demux;
++        }
++#endif
          int res;
          current_module = "enable_cache";
          res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024ull,
-@@ -3386,6 +3428,7 @@
-         if (res == 0)
-             if ((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY)))
-                 goto goto_next_file;
-+#endif
+@@ -3389,6 +3430,7 @@
      }
  
  //============ Open DEMUXERS --- DETECT file type =======================
-@@ -3897,8 +3940,12 @@
++goto_open_demux:
+     current_module = "demux_open";
+ 
+     mpctx->demuxer = demux_open(mpctx->stream, mpctx->file_format, audio_id, video_id, dvdsub_id, filename);
+@@ -3897,8 +3939,12 @@
                      if (!frame_time_remaining && blit_frame) {
                          unsigned int t2 = GetTimer();
  
@@ -1940,10 +1912,10 @@ Index: /opt/code/mplayer-cvs/mplayer.c
                          mpctx->num_buffered_frames--;
  
                          vout_time_usage += (GetTimer() - t2) * 0.000001;
-Index: /opt/code/mplayer-cvs/osdep/getch2.c
+Index: osdep/getch2.c
 ===================================================================
---- /opt/code/mplayer-cvs/osdep/getch2.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/osdep/getch2.c	(working copy)
+--- osdep/getch2.c	(revision 38685)
++++ osdep/getch2.c	(working copy)
 @@ -24,7 +24,7 @@
  #include "config.h"
  
@@ -1953,55 +1925,44 @@ Index: /opt/code/mplayer-cvs/osdep/getch2.c
  #define CONFIG_IOCTL
  #endif
  
-Index: /opt/code/mplayer-cvs/osdep/shmem.c
+Index: osdep/shmem.c
 ===================================================================
---- /opt/code/mplayer-cvs/osdep/shmem.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/osdep/shmem.c	(working copy)
-@@ -50,6 +50,10 @@
- #include <sys/shm.h>
- #endif
- 
-+#ifdef __AMIGAOS4__
-+#include <limits.h>
-+#endif
-+
- #if defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
- #define MAP_ANON MAP_ANONYMOUS
- #endif
-@@ -78,9 +82,14 @@
+--- osdep/shmem.c	(revision 38685)
++++ osdep/shmem.c	(working copy)
+@@ -78,9 +78,14 @@
  #endif
      break;
    case 1:  // ========= MAP_SHARED + /dev/zero ==========
-+#ifndef __AMIGAOS4__
++#ifndef __amigaos4__
      if (devzero == -1 && (devzero = open("/dev/zero", O_RDWR, 0)) == -1) break;
      p=mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,devzero,0);
      if(p==MAP_FAILED) break; // failed
 +#else
 +    p=malloc(size);
-+    if(p=NULL) break; // failed
++    if(p==NULL) break; // failed
 +#endif
      mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap /dev/zero (%p)\n",size,p);
      return p;
    case 2: { // ========= shmget() ==========
-@@ -118,10 +127,14 @@
+@@ -118,10 +123,14 @@
    switch(shmem_type){
      case 0:
      case 1:
-+#ifndef __AMIGAOS4__
++#ifndef __amigaos4__
  	    if(munmap(p,size)) {
  		mp_msg(MSGT_OSDEP, MSGL_ERR, "munmap failed on %p %"PRId64" bytes: %s\n",
  		    p,size,strerror(errno));
  	    }
 +#else
-+            if (p) free(p);
++      if (p) free(p);
 +#endif
        break;
      case 2:
  #ifdef HAVE_SHM
-Index: /opt/code/mplayer-cvs/path.c
+Index: path.c
 ===================================================================
---- /opt/code/mplayer-cvs/path.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/path.c	(working copy)
+--- path.c	(revision 38685)
++++ path.c	(working copy)
 @@ -52,8 +52,12 @@
  #ifdef __MINGW32__
  	const char *config_dir = "/mplayer";
@@ -2029,10 +1990,10 @@ Index: /opt/code/mplayer-cvs/path.c
  	{
  #if !defined(__MINGW32__) && !defined(__CYGWIN__) && !defined(__OS2__)
  		return NULL;
-Index: /opt/code/mplayer-cvs/stream/cache2.c
+Index: stream/cache2.c
 ===================================================================
---- /opt/code/mplayer-cvs/stream/cache2.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/stream/cache2.c	(working copy)
+--- stream/cache2.c	(revision 38685)
++++ stream/cache2.c	(working copy)
 @@ -56,6 +56,10 @@
  #elif defined(PTHREAD_CACHE)
  #include <pthread.h>
@@ -2076,7 +2037,7 @@ Index: /opt/code/mplayer-cvs/stream/cache2.c
 +        void    *_cache_arg = cache_arg;
 +        void *(*_cache_proc) (void *s) = cache_proc;
 +
-+        /* v144: IAmiSSL vom Hauptprozess direkt uebernehmen */
++        /* v287: IAmiSSL vom Hauptprozess uebernehmen - task-lokal nicht moeglich */
 +        extern struct AmiSSLIFace *IAmiSSL;
 +        extern struct AmiSSLIFace *main_IAmiSSL;
 +        IAmiSSL = main_IAmiSSL;
@@ -2172,10 +2133,16 @@ Index: /opt/code/mplayer-cvs/stream/cache2.c
      } while (cache_execute_control(s));
  }
  
-@@ -465,11 +552,27 @@
+@@ -465,11 +552,29 @@
      mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
      return 1;
    }
++
+   if (size > SIZE_MAX) {
+     mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
+     return -1;
+   }
+ 
 +  /* AmigaOS4: HTTPS Cache deaktivieren wegen IAmiSSL Multi-Task Problem */
 +  #ifdef __amigaos4__
 +  if (stream->url && strncmp(stream->url, "https://", 8) == 0) {
@@ -2183,11 +2150,7 @@ Index: /opt/code/mplayer-cvs/stream/cache2.c
 +    return 1;
 +  }
 +  #endif
-   if (size > SIZE_MAX) {
-     mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
-     return -1;
-   }
- 
++
 +  /* v145: IAmiSSL vor Cache-Start sichern */
 +  #ifdef __amigaos4__
 +  {
@@ -2200,7 +2163,7 @@ Index: /opt/code/mplayer-cvs/stream/cache2.c
    s=cache_init(size,ss);
    if(s == NULL) return -1;
    stream->cache_data=s;
-@@ -503,6 +606,8 @@
+@@ -503,6 +608,8 @@
      stream->cache_pid = _beginthread( ThreadProc, 0, s );
  #elif defined(__OS2__)
      stream->cache_pid = _beginthread( ThreadProc, NULL, 256 * 1024, s );
@@ -2209,10 +2172,24 @@ Index: /opt/code/mplayer-cvs/stream/cache2.c
  #else
      {
      pthread_t tid;
-Index: /opt/code/mplayer-cvs/stream/url.c
+Index: stream/stream_ffmpeg.c
 ===================================================================
---- /opt/code/mplayer-cvs/stream/url.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/stream/url.c	(working copy)
+--- stream/stream_ffmpeg.c	(revision 38685)
++++ stream/stream_ffmpeg.c	(working copy)
+@@ -112,9 +112,6 @@
+ 
+ #ifdef AVIO_FLAG_DIRECT
+     flags |= AVIO_FLAG_DIRECT;
+-#else
+-    mp_msg(MSGT_OPEN, MSGL_WARN, "[ffmpeg] No support for AVIO_FLAG_DIRECT, might cause performance and other issues.\n"
+-                                 "Please update to and rebuild against an FFmpeg version supporting it.\n");
+ #endif
+ 
+     if (stream->url)
+Index: stream/url.c
+===================================================================
+--- stream/url.c	(revision 38685)
++++ stream/url.c	(working copy)
 @@ -32,6 +32,10 @@
  #include "mp_strings.h"
  #include "help_mp.h"
@@ -2224,10 +2201,10 @@ Index: /opt/code/mplayer-cvs/stream/url.c
  #ifndef SIZE_MAX
  #define SIZE_MAX ((size_t)-1)
  #endif
-Index: /opt/code/mplayer-cvs/sub/ass_mp.c
+Index: sub/ass_mp.c
 ===================================================================
---- /opt/code/mplayer-cvs/sub/ass_mp.c	(revision 38685)
-+++ /opt/code/mplayer-cvs/sub/ass_mp.c	(working copy)
+--- sub/ass_mp.c	(revision 38685)
++++ sub/ass_mp.c	(working copy)
 @@ -1,3 +1,5 @@
 +#include "config.h"
 +#ifdef CONFIG_ASS
