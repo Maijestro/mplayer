@@ -38,6 +38,11 @@ static void draw_alpha(int x0, int y0, int w, int h, unsigned char *src, unsigne
 #include "../amigaos/window_icons.h"
 #include <intuition/imageclass.h>
 
+/* Amiga native menu bar (Project/Play/Video/Audio/Settings) - shared with vo_comp_yuv2.c */
+extern void attach_menu(struct Window *window);
+extern void detach_menu(struct Window *window);
+
+
 extern struct Catalog *catalog;
 #define MPlayer_NUMBERS
 #define MPlayer_STRINGS
@@ -57,6 +62,9 @@ extern STRPTR myGetCatalogStr(struct Catalog *catalog, LONG num, STRPTR def);
 #include <proto/VA.h>
 #include "ffmpeg/libavutil/hwcontext.h"
 #include "ffmpeg/libavutil/hwcontext_vaapi.h"
+
+/* Shared VADisplay - exported for vf_screenshot.c VAAPI readback support */
+VADisplay vaapi_shared_va_display = NULL;
 
 /* Shared hw_device_ctx from vd_ffmpeg.c */
 extern AVBufferRef *vaapi_hw_device_ctx;
@@ -114,12 +122,60 @@ static struct {
     /* State */
     int             initialized;
     int             va_display_updated;
+    uint32_t        video_format;
     int             window_shown;  /* Window shown after first frame */
     int             window_height;
     int             window_width;
     int             win_left;
     int             win_top;
+    int             va_opened;
 } priv;
+
+/* Window-cropped screenshot for VAAPI mode (driver lacks vaGetImage/vaDeriveImage
+   surface readback support, so we grab the visible window content from the
+   screen bitmap instead - same technique as amigaos_screenshot(), but cropped
+   to the video window instead of the whole screen) */
+extern char *SCREENSHOTDIR;
+extern char *to_name_and_path(char *path, char *name);
+extern int amigaos_snapshot(char* filename, char* title, int width, int height,
+                             char *buffer, int BytesPerRow, int BytesPerPixel,
+                             int offsetX, int offsetY);
+
+void vaapi_window_screenshot(void);
+void vaapi_window_screenshot(void)
+{
+    if (!priv.window || !priv.screen) return;
+    mp_msg(MSGT_VO, MSGL_INFO, "VAAPI screenshot: win=%p screen=%p Left=%d Top=%d BorderLeft=%d BorderTop=%d window_width=%d window_height=%d\n", priv.window, priv.screen, priv.window->LeftEdge, priv.window->TopEdge, priv.window->BorderLeft, priv.window->BorderTop, priv.window_width, priv.window_height);
+
+    int offsetX = priv.window->LeftEdge + priv.window->BorderLeft;
+    int offsetY = priv.window->TopEdge + priv.window->BorderTop;
+    int width   = priv.window_width;
+    int height  = priv.window_height;
+
+    uint32 bpp, bpr;
+    APTR adr, lock;
+    char *temp;
+
+    bpp = GetBitMapAttr(priv.screen->RastPort.BitMap, BMA_BYTESPERPIXEL);
+    int full_height = GetBitMapAttr(priv.screen->RastPort.BitMap, BMA_HEIGHT);
+    lock = LockBitMapTags(priv.screen->RastPort.BitMap,
+                          LBM_BytesPerRow, &bpr, LBM_BaseAddress, &adr, TAG_END);
+
+    int size = bpr * full_height * 2;
+    if ((temp = malloc(size))) {
+        if (lock) {
+            char *path_with_name;
+            memcpy(temp, adr, size);
+            UnlockBitMap(lock);
+            if ((path_with_name = to_name_and_path(SCREENSHOTDIR, "mplayer.png"))) {
+                amigaos_snapshot(path_with_name, "V-MPlayer", width, height,
+                                 temp, bpr, bpp, offsetX, offsetY);
+            }
+        }
+        free(temp);
+    }
+}
+
 
 /* Map MPlayer fourcc to VA profile */
 static char *vaapi_window_title = NULL;
@@ -145,6 +201,7 @@ static void uninit(void)
         priv.va_config = 0;
     }
     if (priv.window) {
+        detach_menu(priv.window);
         dispose_icon(priv.window, &iconifyIcon);
         CloseWindow(priv.window);
         priv.window = NULL;
@@ -163,23 +220,68 @@ static void uninit(void)
     memset(&priv, 0, sizeof(priv));
     priv.va_surface = VA_INVALID_SURFACE;
     priv.hw_surface = VA_INVALID_SURFACE;
+    /* AmigaOS4: Manually close va.library (only if we opened it) */
+    if (priv.va_opened) {
+        if (IVA) { DropInterface((struct Interface *)IVA); IVA = NULL; }
+        if (VABase) { CloseLibrary(VABase); VABase = NULL; }
+        priv.va_opened = 0;
+    }
 }
 
 extern int fixed_vo;
 extern char *filename;
 
 
-static char *GetVAAPIWindowTitle(void)
+static char *GetVAAPIWindowTitle(int width, int height)
 {
     if (vaapi_window_title) free(vaapi_window_title);
     if (filename) {
-        vaapi_window_title = (char *)malloc(strlen("V-MPlayer - ") + strlen(filename) + 1);
+        char res[64] = "";
+        if (priv.src_height > 0) {
+            extern float vo_fps;
+            int fps = (int)(vo_fps + 0.5f);
+            if (fps > 0 && fps != 25 && fps != 30)
+                snprintf(res, sizeof(res), " %dp%d", priv.src_height, fps);
+            else
+                snprintf(res, sizeof(res), " %dp", priv.src_height);
+        }
+        vaapi_window_title = (char *)malloc(strlen("V-MPlayer - ") + strlen(filename) + strlen(res) + 32);
         strcpy(vaapi_window_title, "V-MPlayer - ");
-        if (strncmp(filename, "http", 4) == 0 || strncmp(filename, "rtmp", 4) == 0)
-            strcat(vaapi_window_title, "Stream");
+        if (strncmp(filename, "http", 4) == 0 || strncmp(filename, "rtmp", 4) == 0) {
+            extern char *audio_stream;
+            if (audio_stream && strncmp(audio_stream, "http", 4) == 0) {
+                strcat(vaapi_window_title, "Stream [DualPlay");
+                strcat(vaapi_window_title, res);
+                strcat(vaapi_window_title, "]");
+            } else if (strstr(filename, ".m3u8") != NULL) {
+                strcat(vaapi_window_title, "Stream [HLS");
+                strcat(vaapi_window_title, res);
+                strcat(vaapi_window_title, "]");
+            } else {
+                strcat(vaapi_window_title, "Stream [MP4");
+                strcat(vaapi_window_title, res);
+                strcat(vaapi_window_title, "]");
+            }
+        }
         else {
             const char *bn = strrchr(filename, '/');
             strcat(vaapi_window_title, bn ? bn + 1 : filename);
+            /* Codec und Aufloesung anhaengen */
+            char info[64] = "";
+            const char *codec = "";
+            if (priv.video_format == IMGFMT_VAAPI_H264)       codec = "H.264/HW";
+            else if (priv.video_format == IMGFMT_VAAPI_HEVC)  codec = "H.265/HW";
+            else if (priv.video_format == IMGFMT_VAAPI_MPEG2) codec = "MPEG2/HW";
+            else if (priv.video_format == IMGFMT_VAAPI_VC1)   codec = "VC-1/HW";
+            else if (priv.video_format == IMGFMT_VAAPI_WMV3)  codec = "WMV3/HW";
+            else if (priv.video_format == IMGFMT_YV12 ||
+                     priv.video_format == IMGFMT_I420 ||
+                     priv.video_format == IMGFMT_IYUV)         codec = "MPEG/SW";
+            if (codec[0] && priv.src_height > 0)
+                snprintf(info, sizeof(info), " [%s %dp]", codec, priv.src_height);
+            else if (priv.src_height > 0)
+                snprintf(info, sizeof(info), " [%dp]", priv.src_height);
+            strcat(vaapi_window_title, info);
         }
     } else {
         vaapi_window_title = strdup("V-MPlayer (VAAPI)");
@@ -193,6 +295,21 @@ static int preinit(const char *arg)
     memset(&priv, 0, sizeof(priv));
     priv.va_surface = VA_INVALID_SURFACE;
     priv.hw_surface = VA_INVALID_SURFACE;
+
+    /* AmigaOS4: Manually open va.library (auto-open disabled) */
+    VABase = (struct Library *)OpenLibrary("va.library", 0);
+    if (!VABase) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] Cannot open va.library\n");
+        return -1;
+    }
+    IVA = (struct VAIFace *)GetInterface(VABase, "main", 1, NULL);
+    if (!IVA) {
+        mp_msg(MSGT_VO, MSGL_ERR, "VO: [vaapi] Cannot get IVA interface\n");
+        CloseLibrary(VABase);
+        VABase = NULL;
+        return -1;
+    }
+    priv.va_opened = 1;
 
     priv.va_display = vaGetDisplay(0);
     if (!priv.va_display) {
@@ -212,6 +329,7 @@ static int preinit(const char *arg)
 
     mp_msg(MSGT_VO, MSGL_INFO, "VO: [vaapi] VA-API %d.%d initialized: %s\n",
            major, minor, vaQueryVendorString(priv.va_display));
+    vaapi_shared_va_display = priv.va_display;
 
     return 0;
 }
@@ -245,6 +363,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
         if (priv.sw_rgb_buf)  { FreeVec(priv.sw_rgb_buf);  priv.sw_rgb_buf  = NULL; }
         }
     priv.src_width  = width;
+    priv.video_format = format;
     priv.src_height = height;
     priv.image_format = format;
     priv.dst_width  = (d_width  > 0 && d_width  < 4096) ? d_width  : width;
@@ -355,17 +474,18 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
                 WA_Borderless, (flags & VOFLAG_FULLSCREEN) ? TRUE : FALSE,
                 WA_SizeGadget, (flags & VOFLAG_FULLSCREEN) ? FALSE : TRUE,
                 WA_DepthGadget, (flags & VOFLAG_FULLSCREEN) ? FALSE : TRUE,
-                WA_Title, (flags & VOFLAG_FULLSCREEN) ? (ULONG)NULL : (ULONG)GetVAAPIWindowTitle(),
+                WA_Title, (flags & VOFLAG_FULLSCREEN) ? (ULONG)NULL : (ULONG)GetVAAPIWindowTitle(priv.dst_width, priv.dst_height),
                 WA_ScreenTitle, "V-MPlayer (VAAPI)",
                 WA_NewLookMenus, TRUE, WA_Activate, TRUE,
                 WA_BackFill, LAYERS_NOBACKFILL,
-                WA_IDCMP, IDCMP_COMMON | IDCMP_NEWSIZE | IDCMP_CHANGEWINDOW | IDCMP_GADGETUP,
+                WA_IDCMP, IDCMP_COMMON | IDCMP_NEWSIZE | IDCMP_CHANGEWINDOW | IDCMP_GADGETUP | IDCMP_MENUPICK | IDCMP_MENUVERIFY,
                 WA_Flags, WFLG_REPORTMOUSE | WFLG_SIZEGADGET | WFLG_SIZEBBOTTOM,
                 WA_MinWidth, (priv.dst_width/3) > 160 ? priv.dst_width/3 : 160,
                 WA_MinHeight, (priv.dst_height/3) > 100 ? priv.dst_height/3 : 100,
                 WA_MaxWidth, priv.screen->Width, WA_MaxHeight, priv.screen->Height - priv.screen->BarHeight - 6,
                 TAG_DONE);
             if (!priv.window) { UnlockPubScreen(NULL, priv.screen); priv.screen = NULL; return -1; }
+            attach_menu(priv.window);
             /* Fill window black before first frame using direct RGB */
             {
                 int bw = priv.dst_width;
@@ -401,6 +521,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
                 priv.osd_buf_w * priv.osd_buf_h * 4,
                 AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_DONE);
             priv.osd_active = 0;
+            priv.osd_dirty = 1;
         }
         priv.initialized = 1;
         return 0;
@@ -662,6 +783,7 @@ static int draw_frame(uint8_t *src[])
 static void flip_page(void)
 {
     if (!priv.initialized || !priv.window) return;
+
     /* Update va_display from FFmpeg hw_device_ctx - only once */
     if (!priv.va_display_updated && vaapi_hw_device_ctx) {
         AVHWDeviceContext *dev_ctx = (AVHWDeviceContext *)vaapi_hw_device_ctx->data;
@@ -732,7 +854,7 @@ static void flip_page(void)
     if (st == VA_STATUS_SUCCESS) {
         /* OSD Buffer aktualisieren - nur wenn OSD aktiv oder dirty */
         /* draw_osd nur wenn sich OSD geaendert hat - nicht jeden Frame */
-        if (vo_osd_changed_flag || (!priv.osd_active && priv.osd_dirty))
+        if (osd_level > 0 && priv.osd_dirty)
             draw_osd();
         /* OSD zeichnen */
         int fs = is_fullscreen;
@@ -909,7 +1031,7 @@ static int control(uint32_t request, void *data)
             priv.va_surface = VA_INVALID_SURFACE;
         }
         if (priv.osd_argb_buf) { FreeVec(priv.osd_argb_buf); priv.osd_argb_buf = NULL; }
-        if (priv.window) { CloseWindow(priv.window); priv.window = NULL; }
+        if (priv.window) { detach_menu(priv.window); CloseWindow(priv.window); priv.window = NULL; }
         if (config(priv.src_width, priv.src_height,
                    priv.dst_width, priv.dst_height,
                    is_fullscreen, NULL, priv.image_format) < 0)

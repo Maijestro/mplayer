@@ -137,7 +137,7 @@ void thread_starter()
         void    *_cache_arg = cache_arg;
         void *(*_cache_proc) (void *s) = cache_proc;
 
-        /* v144: IAmiSSL vom Hauptprozess direkt uebernehmen */
+        /* v287: IAmiSSL vom Hauptprozess uebernehmen - task-lokal nicht moeglich */
         extern struct AmiSSLIFace *IAmiSSL;
         extern struct AmiSSLIFace *main_IAmiSSL;
         IAmiSSL = main_IAmiSSL;
@@ -155,7 +155,8 @@ static void _kill_thread( ULONG pid)
 //      Printf("kill pid: done\n");
 }
 
-ULONG _beginthread( void *(*ThreadProc) (void *s), ULONG x, ULONG stack , void *s )
+static ULONG _beginthread( void *(*ThreadProc) (void *s), ULONG x, ULONG stack , void *s );
+static ULONG _beginthread( void *(*ThreadProc) (void *s), ULONG x, ULONG stack , void *s )
 {
 //      ULONG output = Open("CON:",MODE_NEWFILE);
         ULONG process;
@@ -552,17 +553,12 @@ int stream_enable_cache(stream_t *stream,int64_t size,int64_t min,int64_t seek_l
     mp_msg(MSGT_CACHE,MSGL_STATUS,"\rThis stream is non-cacheable\n");
     return 1;
   }
-  /* AmigaOS4: HTTPS Cache deaktivieren wegen IAmiSSL Multi-Task Problem */
-  #ifdef __amigaos4__
-  if (stream->url && strncmp(stream->url, "https://", 8) == 0) {
-    mp_msg(MSGT_CACHE,MSGL_STATUS,"\rHTTPS: Cache disabled on AmigaOS4\n");
-    return 1;
-  }
-  #endif
+
   if (size > SIZE_MAX) {
     mp_msg(MSGT_CACHE, MSGL_FATAL, "Cache size larger than max. allocation size\n");
     return -1;
   }
+
 
   /* v145: IAmiSSL vor Cache-Start sichern */
   #ifdef __amigaos4__

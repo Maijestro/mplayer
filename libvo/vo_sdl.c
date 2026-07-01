@@ -76,6 +76,7 @@
 #endif
 
 #include "subopt-helper.h"
+extern char *filename;
 
 static const vo_info_t info =
 {
@@ -88,7 +89,12 @@ static const vo_info_t info =
 const LIBVO_EXTERN(sdl)
 
 #include "sdl_common.h"
-//#include <SDL/SDL_syswm.h>
+#include <SDL/SDL_syswm.h>
+#ifdef SDL_VIDEO_DRIVER_AMIGAOS4
+#include <intuition/intuition.h>
+#include <interfaces/intuition.h>
+extern struct IntuitionIFace *IIntuition;
+#endif
 
 
 #ifdef SDL_ENABLE_LOCKS
@@ -631,7 +637,22 @@ config(uint32_t width, uint32_t height, uint32_t d_width, uint32_t d_height, uin
 
     if (WinID < 0) {
 	/* Set output window title */
-	SDL_WM_SetCaption (".: MPlayer : F = Fullscreen/Windowed : C = Cycle Fullscreen Resolutions :.", title);
+	{ char sdl_title[256]; char sdl_info[64] = "";
+      const char *sdl_codec = "";
+      if (format == IMGFMT_YV12 || format == IMGFMT_I420 || format == IMGFMT_IYUV) sdl_codec = "MPEG/SW";
+      else if (format == IMGFMT_YUY2 || format == IMGFMT_UYVY || format == IMGFMT_YVYU) sdl_codec = "YUV/SW";
+      else sdl_codec = "RGB/SW";
+      if (d_height > 0) snprintf(sdl_info, sizeof(sdl_info), " [%s %dp]", sdl_codec, (int)d_height);
+      if (filename) { if (strncmp(filename, "http", 4) == 0 || strncmp(filename, "rtmp", 4) == 0) { snprintf(sdl_title, sizeof(sdl_title), "V-MPlayer (SDL) - Stream%s", sdl_info); } else { const char *bs = strrchr(filename, (int)'/'); const char *bc = strrchr(filename, (int)':'); const char *bn = bs > bc ? bs : bc; snprintf(sdl_title, sizeof(sdl_title), "V-MPlayer (SDL) - %s%s", bn ? bn+1 : filename, sdl_info); } } else { snprintf(sdl_title, sizeof(sdl_title), "V-MPlayer (SDL)"); }
+      SDL_WM_SetCaption(sdl_title, "V-MPlayer (SDL)");
+      { SDL_SysWMinfo wminfo; SDL_VERSION(&wminfo.version);
+        if (SDL_GetWMInfo(&wminfo)) {
+#ifdef SDL_VIDEO_DRIVER_AMIGAOS4
+          if (wminfo.window)
+              IIntuition->SetWindowAttrs(wminfo.window, WA_ScreenTitle, (ULONG)"V-MPlayer (SDL)", TAG_DONE);
+#endif
+        }
+      } }
 	//SDL_WM_SetCaption (title, title);
     }
 
@@ -1173,10 +1194,10 @@ static void flip_page (void)
         if(priv->osd_has_changed) {
             priv->osd_has_changed = 0;
 		SDL_UpdateRects(priv->surface, 1, &priv->surface->clip_rect);
-        }
-        else
+        } else {
             SDL_UpdateRect(priv->surface, 0, priv->y_screen_top,
                            priv->surface->clip_rect.w, priv->y_screen_bottom);
+        }
 
 	    break;
 	    default:

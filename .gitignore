@@ -16,4 +16,3 @@ objs_existing.lst
 config.log
 config.mak
 version.h
-ffmpeg/

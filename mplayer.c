@@ -3412,14 +3412,8 @@ play_next_file:
 
 // CACHE2: initial prefill: 20%  later: 5%  (should be set by -cacheopts)
 goto_enable_cache:
+#ifndef __amigaos4__
     if (stream_cache_size > 0) {
-#ifdef __amigaos4__
-        /* AmigaOS4: Cache deaktiviert - Single-Core IPC Race Condition
-         * Der Cache-Prozess laeuft via CreateNewProcTags und teilt den
-         * Adressraum, aber ohne Mutex-Schutz kommt es zu Datenkorrruption.
-         * Lokales Filesystem ist schnell genug ohne Cache. */
-        mp_msg(MSGT_CACHE, MSGL_WARN, "AmigaOS4: -cache nicht unterstuetzt (Race Condition), wird ignoriert.\n");
-#else
         int res;
         current_module = "enable_cache";
         res = stream_enable_cache(mpctx->stream, stream_cache_size * 1024ull,
@@ -3428,10 +3422,11 @@ goto_enable_cache:
         if (res == 0)
             if ((mpctx->eof = libmpdemux_was_interrupted(PT_NEXT_ENTRY)))
                 goto goto_next_file;
-#endif
     }
+#endif
 
 //============ Open DEMUXERS --- DETECT file type =======================
+goto_open_demux:
     current_module = "demux_open";
 
     mpctx->demuxer = demux_open(mpctx->stream, mpctx->file_format, audio_id, video_id, dvdsub_id, filename);

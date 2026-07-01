@@ -69,7 +69,7 @@ char *get_path(const char *filename){
 #endif
 
 #ifdef __AMIGAOS4__
-	if ((homedir = "/PROGDIR") == NULL)
+	if ((homedir = "PROGDIR:") == NULL)
 #else
 	if ((homedir = getenv("MPLAYER_HOME")) != NULL)
 		config_dir = "";
@@ -111,7 +111,11 @@ char *get_path(const char *filename){
 		len += strlen(filename) + 1;
 		if ((buff = malloc(len)) == NULL)
 			return NULL;
-		sprintf(buff, "%s%s/%s", homedir, config_dir, filename);
+		#ifdef __AMIGAOS4__
+sprintf(buff, "%sconf/%s", homedir, filename);
+#else
+sprintf(buff, "%s%s/%s", homedir, config_dir, filename);
+#endif
 	}
 
 #ifdef CONFIG_MACOSX_BUNDLE

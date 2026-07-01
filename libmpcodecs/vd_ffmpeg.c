@@ -56,6 +56,8 @@ static const vd_info_t info = {
 
 LIBVD_EXTERN(ffmpeg)
 
+extern char **video_driver_list;
+
 #include "libavcodec/avcodec.h"
 
 #ifndef AV_EF_COMPLIANT
@@ -309,6 +311,15 @@ static void set_format_params(struct AVCodecContext *avctx,
 #endif
 #if CONFIG_VAAPI
     case AV_PIX_FMT_VAAPI:
+        /* If user explicitly requested a SW video output, skip VAAPI hwaccel */
+        if (video_driver_list && video_driver_list[0]) {
+            const char *vo = video_driver_list[0];
+            if (strcmp(vo, "vaapi") != 0) {
+                mp_msg(MSGT_DECVIDEO, MSGL_INFO,
+                       "[VD_FFMPEG] SW VO '%s' requested, disabling VAAPI hwaccel\n", vo);
+                return;
+            }
+        }
         ctx->hwaccel_mode = HWACCEL_MODE_VAAPI;
         {
             if (!avctx->hw_device_ctx) {
@@ -430,7 +441,9 @@ static int init(sh_video_t *sh){
 
 #if CONFIG_VAAPI
     /* Set hw_device_ctx before avcodec_open2 so get_format can use VAAPI */
-    {
+    /* Only initialize VAAPI if a VAAPI-capable VO is requested */
+    if (video_driver_list && video_driver_list[0] &&
+        strcmp(video_driver_list[0], "vaapi") == 0) {
         AVBufferRef *hw_device_ctx = NULL;
         int err = av_hwdevice_ctx_create(&hw_device_ctx,
                                          AV_HWDEVICE_TYPE_VAAPI,

@@ -277,7 +277,11 @@ static void ass_configure_fonts(ASS_Renderer* priv) {
 	dir = get_path("fonts");
 	if (font_fontconfig < 0 && sub_font_name) path = strdup(sub_font_name);
 	else if (font_fontconfig < 0 && font_name) path = strdup(font_name);
+	#ifdef __amigaos4__
+	else path = strdup("PROGDIR:conf/subfont.ttf");
+	#else
 	else path = get_path("subfont.ttf");
+	#endif
 	if (font_fontconfig >= 0 && sub_font_name) family = strdup(sub_font_name);
 	else if (font_fontconfig >= 0 && font_name) family = strdup(font_name);
 	else family = 0;

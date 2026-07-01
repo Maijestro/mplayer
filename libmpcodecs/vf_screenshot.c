@@ -38,6 +38,10 @@
 #include "libswscale/swscale.h"
 #include "libavcodec/avcodec.h"
 
+#include <proto/VA.h>
+extern VADisplay vaapi_shared_va_display;
+extern void vaapi_window_screenshot(void);
+
 struct vf_priv_s {
     int frameno;
     char fname[PATH_MAX];
@@ -52,6 +56,7 @@ struct vf_priv_s {
     AVPacket *pkt;
     struct SwsContext *ctx;
     AVCodecContext *avctx;
+    int is_vaapi;
 };
 
 //===========================================================================//
@@ -70,8 +75,9 @@ static int config(struct vf_instance *vf,
                   unsigned int flags, unsigned int outfmt)
 {
     int res;
+    vf->priv->is_vaapi = IMGFMT_IS_VAAPI(outfmt) ? 1 : 0;
     if (vf->priv->ctx) sws_freeContext(vf->priv->ctx);
-    vf->priv->ctx=sws_getContextFromCmdLine(width, height, outfmt,
+    vf->priv->ctx=sws_getContextFromCmdLine(width, height, vf->priv->is_vaapi ? IMGFMT_NV12 : outfmt,
                                  d_width, d_height, IMGFMT_RGB24);
 
     if (!vf->priv->avctx) {
@@ -158,6 +164,70 @@ static void scale_image(struct vf_priv_s* priv, mp_image_t *mpi)
     if (!priv->pic->data[0])
         priv->pic->data[0] = av_malloc(priv->pic->linesize[0]*priv->dh);
 
+    if (priv->is_vaapi) {
+        VASurfaceID surface = (VASurfaceID)(uintptr_t)mpi->planes[3];
+        VAImage img;
+        VAImageFormat fmt;
+        VAStatus vst;
+        void *buf = NULL;
+        int found = 0;
+
+        if (!vaapi_shared_va_display || surface == VA_INVALID_SURFACE) {
+            mp_msg(MSGT_VFILTER, MSGL_ERR, "[screenshot] no VAAPI display/surface - screenshot not available\n");
+            return;
+        }
+
+        {
+            int num_formats = vaMaxNumImageFormats(vaapi_shared_va_display);
+            VAImageFormat *formats = calloc(num_formats, sizeof(VAImageFormat));
+            int i;
+            vaQueryImageFormats(vaapi_shared_va_display, formats, &num_formats);
+            for (i = 0; i < num_formats; i++) {
+                if (formats[i].fourcc == VA_FOURCC_NV12 ||
+                    formats[i].fourcc == VA_FOURCC_YV12) {
+                    fmt = formats[i];
+                    found = 1;
+                    break;
+                }
+            }
+            free(formats);
+        }
+
+        if (!found) {
+            mp_msg(MSGT_VFILTER, MSGL_ERR, "[screenshot] no NV12/YV12 image format available\n");
+            return;
+        }
+
+        vst = vaCreateImage(vaapi_shared_va_display, &fmt, mpi->width, mpi->height, &img);
+        if (vst != VA_STATUS_SUCCESS) {
+            mp_msg(MSGT_VFILTER, MSGL_ERR, "[screenshot] vaCreateImage failed\n");
+            return;
+        }
+
+        vst = vaGetImage(vaapi_shared_va_display, surface, 0, 0, mpi->width, mpi->height, img.image_id);
+        if (vst != VA_STATUS_SUCCESS) {
+            mp_msg(MSGT_VFILTER, MSGL_ERR, "[screenshot] vaGetImage failed: %s (fourcc=0x%x %dx%d)\n",
+                   vaErrorStr(vst), fmt.fourcc, mpi->width, mpi->height);
+            vaDestroyImage(vaapi_shared_va_display, img.image_id);
+            return;
+        }
+
+        if (vaMapBuffer(vaapi_shared_va_display, img.buf, &buf) == VA_STATUS_SUCCESS) {
+            const uint8_t *src_planes[4] = {0,0,0,0};
+            int src_stride[4] = {0,0,0,0};
+            src_planes[0] = (uint8_t*)buf + img.offsets[0];
+            src_planes[1] = (uint8_t*)buf + img.offsets[1];
+            src_stride[0] = img.pitches[0];
+            src_stride[1] = img.pitches[1];
+            sws_scale(priv->ctx, src_planes, src_stride, 0, mpi->height, priv->pic->data, priv->pic->linesize);
+            vaUnmapBuffer(vaapi_shared_va_display, img.buf);
+        } else {
+            mp_msg(MSGT_VFILTER, MSGL_ERR, "[screenshot] vaMapBuffer failed\n");
+        }
+        vaDestroyImage(vaapi_shared_va_display, img.image_id);
+        return;
+    }
+
     sws_scale(priv->ctx, (const uint8_t *const *)mpi->planes, mpi->stride, 0, mpi->height, priv->pic->data, priv->pic->linesize);
 }
 
@@ -178,6 +248,8 @@ static void get_image(struct vf_instance *vf, mp_image_t *mpi)
 {
     // FIXME: should vf.c really call get_image when using slices??
     if (mpi->flags & MP_IMGFLAG_DRAW_CALLBACK)
+      return;
+    if (IMGFMT_IS_VAAPI(mpi->imgfmt))
       return;
     vf->dmpi= vf_get_image(vf->next, mpi->imgfmt,
                            mpi->type, mpi->flags/* | MP_IMGFLAG_READABLE*/, mpi->width, mpi->height);
@@ -201,6 +273,9 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts, double
 {
     mp_image_t *dmpi = (mp_image_t *)mpi->priv;
 
+    if (vf->priv->is_vaapi) {
+        dmpi = mpi;
+    } else
     if(!(mpi->flags&(MP_IMGFLAG_DIRECT|MP_IMGFLAG_DRAW_CALLBACK))){
         dmpi=vf_get_image(vf->next,mpi->imgfmt,
                                     MP_IMGTYPE_EXPORT, 0,
@@ -218,11 +293,18 @@ static int put_image(struct vf_instance *vf, mp_image_t *mpi, double pts, double
 
     if(vf->priv->shot) {
         vf->priv->shot &= ~1;
-        gen_fname(vf->priv);
-        if (vf->priv->fname[0]) {
-            if (!vf->priv->store_slices)
-              scale_image(vf->priv, dmpi);
-            write_png(vf->priv);
+        if (vf->priv->is_vaapi) {
+            /* AmigaOS4 VAAPI driver does not support vaGetImage/vaDeriveImage
+               surface readback - fall back to proven screen-grab mechanism
+               (same as used by the native Amiga menu's screenshot item) */
+            vaapi_window_screenshot();
+        } else {
+            gen_fname(vf->priv);
+            if (vf->priv->fname[0]) {
+                if (!vf->priv->store_slices)
+                  scale_image(vf->priv, dmpi);
+                write_png(vf->priv);
+            }
         }
         vf->priv->store_slices = 0;
     }
@@ -272,6 +354,11 @@ static int query_format(struct vf_instance *vf, unsigned int fmt)
     case IMGFMT_444P:
     case IMGFMT_422P:
     case IMGFMT_411P:
+    case IMGFMT_VAAPI_H264:
+    case IMGFMT_VAAPI_MPEG2:
+    case IMGFMT_VAAPI_VC1:
+    case IMGFMT_VAAPI_WMV3:
+    case IMGFMT_VAAPI_HEVC:
         return vf_next_query_format(vf, fmt);
     }
     return 0;

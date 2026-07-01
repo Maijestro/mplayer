@@ -898,7 +898,11 @@ static int load_sub_face(const char *name, int face_index, FT_Face *face)
     if (name) err = FT_New_Face(library, name, face_index, face);
 
     if (err) {
+	#ifdef __amigaos4__
+	char *font_file = strdup("PROGDIR:conf/subfont.ttf");
+#else
 	char *font_file = get_path("subfont.ttf");
+#endif
 	err = FT_New_Face(library, font_file, 0, face);
 	free(font_file);
 	if (err) {

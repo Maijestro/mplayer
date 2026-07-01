@@ -44,7 +44,7 @@
 #include "menu.h"
 #include "../osdep/keycodes.h"
 #include "../version.h"
-#define FFMPEG_VERSION "6.0"
+#include "libavutil/ffversion.h"
 
 #include "debug.h"
 
@@ -1926,6 +1926,7 @@ void ShowAbout(void)
 		CS(MSG_About_Translation),CS(MSG_About_Translator), \
 		CS(MSG_About_Copyright),CS(MSG_About_MPlayer_Team), \
 		CS(MSG_About_AmigaOS4Version), \
+        "\n Maijestro - VAAPI hardware decoding" \
 		"\n Andrea Palmatè - https://www.amigasoft.net" \
 		"\n Kjetil Hvalstrand - https://github.com/khval" \
 		"\n Guillaume 'zzd10h' Boesel" \
@@ -1949,6 +1950,7 @@ void ShowAbout(void)
 		CS(MSG_About_Translation),CS(MSG_About_Translator), \
 		CS(MSG_About_Copyright),CS(MSG_About_MPlayer_Team), \
 		CS(MSG_About_AmigaOS4Version), \
+        "\nMaijestro - VAAPI hardware decoding" \
 		"\nAndrea Palmatè - https://www.amigasoft.net" \
 		"\nKjetil Hvalstrand - https://github.com/khval" \
 		"\nGuillaume 'zzd10h' Boesel" \

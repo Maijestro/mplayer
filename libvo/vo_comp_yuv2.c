@@ -131,9 +131,16 @@ static char *GetWindowTitle(void)
 
    if (filename)
    {
-      window_title = (char *)malloc(strlen("V-MPlayer - ") + strlen(filename) + 1);
+      const char *bn = strrchr(filename, '/');
+      const char *name = bn ? bn + 1 : filename;
+      char info[32] = "";
+      extern uint32_t amiga_image_height;
+      if (amiga_image_height > 0)
+          snprintf(info, sizeof(info), " [MPEG/SW %dp]", (int)amiga_image_height);
+      window_title = (char *)malloc(strlen("V-MPlayer - ") + strlen(name) + strlen(info) + 1);
       strcpy(window_title, "V-MPlayer - ");
-      strcat(window_title, filename);
+      strcat(window_title, name);
+      strcat(window_title, info);
    } else {
       window_title = strdup("V-MPlayer (comp_yuv2)");
    }

@@ -111,11 +111,17 @@ static int open_f(stream_t *stream, int mode, void *opts, int *file_format)
     }
 
 #ifdef AVIO_FLAG_DIRECT
-    flags |= AVIO_FLAG_DIRECT;
-#else
-    mp_msg(MSGT_OPEN, MSGL_WARN, "[ffmpeg] No support for AVIO_FLAG_DIRECT, might cause performance and other issues.\n"
-                                 "Please update to and rebuild against an FFmpeg version supporting it.\n");
+    /* AmigaOS4: Do not use AVIO_FLAG_DIRECT for HTTPS - causes stuttering */
+    if (!stream->url || strncmp(stream->url, "https", 5) != 0)
+        flags |= AVIO_FLAG_DIRECT;
 #endif
+
+    /* AmigaOS4: Enable reconnect for HTTP/HTTPS streams */
+    if (stream->url && strncmp(stream->url, "http", 4) == 0) {
+        av_dict_set(&avopts, "reconnect", "1", 0);
+        av_dict_set(&avopts, "reconnect_streamed", "1", 0);
+        av_dict_set(&avopts, "reconnect_delay_max", "5", 0);
+    }
 
     if (stream->url)
         filename = stream->url;

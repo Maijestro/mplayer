@@ -615,7 +615,7 @@ const m_option_t common_opts[] = {
     {"subfont-autoscale", &subtitle_autoscale, CONF_TYPE_INT, CONF_RANGE, 0, 3, NULL},
 #endif
 #ifdef CONFIG_ASS
-    {"ass", &ass_enabled, CONF_TYPE_FLAG, 0, 0, 1, NULL},
+    {"ass", &ass_enabled, CONF_TYPE_FLAG, 0, 0, 0, NULL}, /* disabled by default - use -ass to enable */
     {"noass", &ass_enabled, CONF_TYPE_FLAG, 0, 1, 0, NULL},
     {"ass-font-scale", &ass_font_scale, CONF_TYPE_FLOAT, CONF_RANGE, 0, 100, NULL},
     {"ass-line-spacing", &ass_line_spacing, CONF_TYPE_FLOAT, CONF_RANGE, -1000, 1000, NULL},

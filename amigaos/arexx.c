@@ -35,7 +35,7 @@
 #include "arexx.h"
 #include "mp_msg.h"
 
-#undef USE_LOCAL_AREXX_GET
+#define USE_LOCAL_AREXX_GET
 
 #ifdef USE_LOCAL_AREXX_GET
 long rxid_get_sub_visibility();
@@ -562,7 +562,7 @@ DBUG("RXID_%02ld\n",cmd->ac_ID);
 		if(arexx_gui!=TRUE) arexx_gui=TRUE;
 // end markus
 #ifdef USE_LOCAL_AREXX_GET
-		sprintf(AREXXRESULT,rxid_get_time_length());
+		sprintf(AREXXRESULT,"%ld",rxid_get_time_length());
 #else
 		put_command0(MP_CMD_GET_TIME_LENGTH);
 		sprintf(AREXXRESULT,"%d",get_arexx_rc2());

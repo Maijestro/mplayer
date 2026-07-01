@@ -50,10 +50,6 @@
 #include <sys/shm.h>
 #endif
 
-#ifdef __AMIGAOS4__
-#include <limits.h>
-#endif
-
 #if defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
 #define MAP_ANON MAP_ANONYMOUS
 #endif
@@ -82,13 +78,13 @@ while(1){
 #endif
     break;
   case 1:  // ========= MAP_SHARED + /dev/zero ==========
-#ifndef __AMIGAOS4__
+#ifndef __amigaos4__
     if (devzero == -1 && (devzero = open("/dev/zero", O_RDWR, 0)) == -1) break;
     p=mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,devzero,0);
     if(p==MAP_FAILED) break; // failed
 #else
     p=malloc(size);
-    if(p=NULL) break; // failed
+    if(p==NULL) break; // failed
 #endif
     mp_dbg(MSGT_OSDEP, MSGL_DBG2, "shmem: %"PRId64" bytes allocated using mmap /dev/zero (%p)\n",size,p);
     return p;
@@ -127,13 +123,13 @@ void shmem_free(void* p,int64_t size){
   switch(shmem_type){
     case 0:
     case 1:
-#ifndef __AMIGAOS4__
+#ifndef __amigaos4__
 	    if(munmap(p,size)) {
 		mp_msg(MSGT_OSDEP, MSGL_ERR, "munmap failed on %p %"PRId64" bytes: %s\n",
 		    p,size,strerror(errno));
 	    }
 #else
-            if (p) free(p);
+      if (p) free(p);
 #endif
       break;
     case 2:

@@ -209,13 +209,6 @@ const vo_functions_t* const video_out_drivers[] =
 #if CONFIG_VDPAU
         &video_out_vdpau,
 #endif
-#if CONFIG_VAAPI
-        &video_out_vaapi,
-#endif
-        &video_out_comp_yuv2,
-#ifdef CONFIG_SDL
-        &video_out_sdl,
-#endif
 #ifdef CONFIG_XV
         &video_out_xv,
 #endif
@@ -227,9 +220,6 @@ const vo_functions_t* const video_out_drivers[] =
 #ifdef CONFIG_X11
         &video_out_x11,
         &video_out_xover,
-#endif
-#ifdef CONFIG_SDL
-        &video_out_sdl,
 #endif
 #if CONFIG_GL
         &video_out_gl,
@@ -292,12 +282,13 @@ const vo_functions_t* const video_out_drivers[] =
         &video_out_cvidix,
 #endif
 #ifdef __AMIGAOS4__
-        &video_out_p96_pip,
+        &video_out_vaapi,
         &video_out_comp_yuv2,
         &video_out_comp_yuv,
         &video_out_comp,
+        &video_out_sdl,
+        &video_out_p96_pip,
         &video_out_cgx_wpa,
-        &video_out_vaapi,
         &video_out_amiga,
 #endif
         &video_out_null,
@@ -383,9 +374,9 @@ const vo_functions_t* init_best_video_out(char** vo_list){
     // now try the rest...
     vo_subdevice=NULL;
     for(i=0;video_out_drivers[i];i++){
-	const vo_functions_t* video_driver=video_out_drivers[i];
-	if(!video_driver->preinit(vo_subdevice))
-	    return video_driver; // success!
+const vo_functions_t* video_driver=video_out_drivers[i];
+if(!video_driver->preinit(vo_subdevice))
+    return video_driver; // success!
     }
     return NULL;
 }

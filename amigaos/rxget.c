@@ -1,3 +1,10 @@
+#include "../m_property.h"
+#include "../mp_core.h"
+#include "../libvo/video_out.h"
+#include "../sub/sub.h"
+extern MPContext *mpctx_global;
+#define mpctx mpctx_global
+extern float playback_speed;
 /*
  * This file is part of MPlayer.
  *
@@ -54,12 +61,12 @@ long rxid_get_time_pos()
 
 	if(mpctx->sh_video)
 	{
-		Printf("mpctx->sh_video\n");
+		printf("mpctx->sh_video\n");
 		return (long)(1000.0*mpctx->sh_video->pts);
 	}
 	else if(mpctx->sh_audio && mpctx->audio_out)
 	{
-		Printf("mpctx->sh_audio && mpctx->audio_out\n");
+		printf("mpctx->sh_audio && mpctx->audio_out\n");
 		return (long)(1000.0 * (mpctx->sh_audio->stream_delay - mpctx->audio_out->get_delay() * playback_speed));
 	}
 	else

@@ -50,6 +50,7 @@
 #include "sub/sub_cc.h"
 #include "libmpcodecs/dec_teletext.h"
 #include "libavutil/intreadwrite.h"
+#include "libavcodec/avcodec.h"
 #include "m_option.h"
 #include "mpcommon.h"
 
